@@ -6,7 +6,7 @@ ifndef KERNELDIR
 	KERNELDIR = /usr/src/linux
 endif
 
-CFLAGS = -I${KERNELDIR}/include
+CFLAGS = -Wall -O2 -I${KERNELDIR}/include
 
 all: tipc-config
 
