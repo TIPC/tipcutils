@@ -319,6 +319,11 @@ static int genetlink_call(__u16 family_id, __u8 cmd, void *header, size_t header
 	if (!NLMSG_OK(&reply_msg->n, len))
 		fatal("invalid reply message received via Netlink\n");
 
+	if (reply_msg->n.nlmsg_type == NLMSG_ERROR) {
+		len = -1;
+		goto out;
+	}
+
 	if ((request_msg->n.nlmsg_type != reply_msg->n.nlmsg_type) ||
 	    (request_msg->n.nlmsg_seq != reply_msg->n.nlmsg_seq))
 		fatal("unexpected message received via Netlink\n");
@@ -341,6 +346,7 @@ static int genetlink_call(__u16 family_id, __u8 cmd, void *header, size_t header
 	if (len > 0)
 		memcpy(reply, &reply_msg->payload[header_len], len);
 
+ out:
 	free(request_msg);
 	free(reply_msg);
 
@@ -373,6 +379,9 @@ static int get_genl_family_id(const char* name)
 				 0, 0,
 				 request, request_len,
 				 reply, reply_len);
+	
+	if (len == -1)
+		return -1;
 
 	/*
 	 * Parse reply
