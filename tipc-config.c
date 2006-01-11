@@ -44,6 +44,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <linux/tipc.h>
+#include <linux/tipc_config.h>
 #include <linux/genetlink.h>
 
 /* constants */
