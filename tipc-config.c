@@ -1,9 +1,8 @@
 /*
- * tipc-config.c: TIPC configuration management tool
+ * tipc-config.c: TIPC configuration tool
  * 
- * Copyright (c) 2004-2005, Ericsson Research Canada
+ * Copyright (c) 2004-2006, Ericsson AB
  * Copyright (c) 2005, Wind River Systems
- * Copyright (c) 2005-2006, Ericsson AB
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -1054,7 +1053,7 @@ static void enable_bearer(char *args)
 
 	while ((a = get_arg(args))) {
 		__u32 sc = dest & 0xfffff000; /* defaults to cluster scope */
-		uint pri = TIPC_NUM_LINK_PRI; /* defaults to media priority */
+		uint pri = TIPC_MEDIA_LINK_PRI; /* defaults to media priority */
 		char *sc_str, *pri_str;
 
 		if ((sc_str = strchr(a, '/'))) {
@@ -1069,9 +1068,12 @@ static void enable_bearer(char *args)
 				sc = str2addr(sc_str);
 		}
 
-		confirm("Enable bearer <%s>%s with detection scope %s and "
-			"priority %u? [Y/n]",
-			a, for_dest(), addr2str(sc), pri);
+		if (pri == TIPC_MEDIA_LINK_PRI)
+			confirm("Enable bearer <%s>%s with detection scope %s and default media priority? [Y/n]",
+				a, for_dest(), addr2str(sc));
+		else
+			confirm("Enable bearer <%s>%s with detection scope %s and priority %u? [Y/n]",
+				a, for_dest(), addr2str(sc), pri);
 
 		req_tlv.priority = htonl(pri);
 		req_tlv.detect_scope = htonl(sc);
