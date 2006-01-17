@@ -1,8 +1,9 @@
 /*
- * tipc-config.c: TIPC configuration tool
+ * tipc-config.c: TIPC configuration management tool
  * 
- * Copyright (c) 2004-2006, Ericsson AB
+ * Copyright (c) 2004-2005, Ericsson Research Canada
  * Copyright (c) 2005, Wind River Systems
+ * Copyright (c) 2005-2006, Ericsson AB
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -812,6 +813,38 @@ static void reset_link_stats(char *args)
 	cprintf("Link %s statistics reset\n", link_name);
 }
 
+
+static void create_link(char *args)
+{
+	char create_link_cmd[TIPC_MAX_BEARER_NAME + TIPC_MAX_MEDIA_ADDR + 1];
+	int tlv_space;
+
+	strncpy(create_link_cmd, args, TIPC_MAX_BEARER_NAME + TIPC_MAX_MEDIA_ADDR);
+	create_link_cmd[TIPC_MAX_BEARER_NAME + TIPC_MAX_MEDIA_ADDR] = '\0';
+
+	tlv_space = TLV_SET(tlv_area, TIPC_TLV_CREATE_LINK, 
+			    create_link_cmd, sizeof(create_link_cmd));
+	tlv_space = do_command(TIPC_CMD_CREATE_LINK, tlv_area, tlv_space,
+			       tlv_area, sizeof(tlv_area));
+	cprintf("Created new link \n");
+
+}
+
+static void delete_link(char *args)
+{
+	char link_name[TIPC_MAX_LINK_NAME];
+	int tlv_space;
+
+	strncpy(link_name, args, TIPC_MAX_LINK_NAME - 1);
+	link_name[TIPC_MAX_LINK_NAME - 1] = '\0';
+	tlv_space = TLV_SET(tlv_area, TIPC_TLV_LINK_NAME, 
+			    link_name, sizeof(link_name));
+	tlv_space = do_command(TIPC_CMD_DELETE_LINK, tlv_area, tlv_space,
+			       tlv_area, sizeof(tlv_area));
+
+	cprintf("Deleted link %s\n", link_name);
+}
+
 static void show_name_table(char *args)
 {
 	int tlv_space;
@@ -1053,7 +1086,7 @@ static void enable_bearer(char *args)
 
 	while ((a = get_arg(args))) {
 		__u32 sc = dest & 0xfffff000; /* defaults to cluster scope */
-		uint pri = TIPC_MEDIA_LINK_PRI; /* defaults to media priority */
+		uint pri = TIPC_NUM_LINK_PRI; /* defaults to media priority */
 		char *sc_str, *pri_str;
 
 		if ((sc_str = strchr(a, '/'))) {
@@ -1068,12 +1101,9 @@ static void enable_bearer(char *args)
 				sc = str2addr(sc_str);
 		}
 
-		if (pri == TIPC_MEDIA_LINK_PRI)
-			confirm("Enable bearer <%s>%s with detection scope %s and default media priority? [Y/n]",
-				a, for_dest(), addr2str(sc));
-		else
-			confirm("Enable bearer <%s>%s with detection scope %s and priority %u? [Y/n]",
-				a, for_dest(), addr2str(sc), pri);
+		confirm("Enable bearer <%s>%s with detection scope %s and "
+			"priority %u? [Y/n]",
+			a, for_dest(), addr2str(sc), pri);
 
 		req_tlv.priority = htonl(pri);
 		req_tlv.detect_scope = htonl(sc);
@@ -1479,12 +1509,10 @@ static char usage[] =
 "  -max_slaves [=<value>]                     \n"
 "  -log  [=<size>]                            Dump/resize log\n"
 "  -help                                      This usage list\n"
-#if 0
-"  -r     =<addr>                             Get routes to domain\n"
-"  -lc    =<addr>,bearer=<bname>,             Create link\n"
-"           ip=<ip.ad.dr.ess:port>|            \n"
-"           eth=<et:he:ra:dd:re:ss>            \n"
+/*"  -r     =<addr>                           Get routes to domain\n" */
+"  -lc    =<bearername>,<et:he:ra:dd:re:ss>   Create link\n"
 "  -ld    =<linkname>                         Delete link \n"
+#if 0
 "  -lb    =<linkname>                         Block link \n"
 "  -lu    =<linkname>                         Unblock link\n"
 "  -la    =<linkname>                         Get link peer address\n"
@@ -1519,9 +1547,9 @@ static struct option options[] = {
 	{"l",            2, 0, OPT_BASE + 13},
 	{"ls",           1, 0, OPT_BASE + 14},
 	{"lsr",          1, 0, OPT_BASE + 15},
-#if 0
 	{"lc",           2, 0, OPT_BASE + 16},
 	{"ld",           2, 0, OPT_BASE + 17},
+#if 0
 	{"lb",           2, 0, OPT_BASE + 18},
 	{"lu",           2, 0, OPT_BASE + 19},
 #endif
@@ -1560,8 +1588,8 @@ void (*cmd_array[])(char *args) = {
 	get_links,
 	show_link_stats,
 	reset_link_stats,
-	NULL, /* create link */
-	NULL, /* delete link */
+	create_link,
+	delete_link,
 	NULL, /* link_block */
 	NULL, /* link_unblock */
 	set_link_priority,
