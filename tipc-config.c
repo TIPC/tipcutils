@@ -816,10 +816,10 @@ static void reset_link_stats(char *args)
 
 static void create_link(char *args)
 {
-	char create_link_cmd[TIPC_MAX_BEARER_NAME + TIPC_MAX_MEDIA_ADDR + 1];
+	char create_link_cmd[TIPC_MAX_BEARER_NAME + TIPC_MAX_MEDIA_ADDR + TIPC_MAX_ADDR + 1];
 	int tlv_space;
 
-	strncpy(create_link_cmd, args, TIPC_MAX_BEARER_NAME + TIPC_MAX_MEDIA_ADDR);
+	strncpy(create_link_cmd, args, TIPC_MAX_BEARER_NAME +  TIPC_MAX_ADDR + TIPC_MAX_MEDIA_ADDR);
 	create_link_cmd[TIPC_MAX_BEARER_NAME + TIPC_MAX_MEDIA_ADDR] = '\0';
 
 	tlv_space = TLV_SET(tlv_area, TIPC_TLV_CREATE_LINK, 
@@ -1086,7 +1086,7 @@ static void enable_bearer(char *args)
 
 	while ((a = get_arg(args))) {
 		__u32 sc = dest & 0xfffff000; /* defaults to cluster scope */
-		uint pri = TIPC_NUM_LINK_PRI; /* defaults to media priority */
+		uint pri = TIPC_MEDIA_LINK_PRI; /* defaults to media priority */
 		char *sc_str, *pri_str;
 
 		if ((sc_str = strchr(a, '/'))) {
@@ -1510,7 +1510,8 @@ static char usage[] =
 "  -log  [=<size>]                            Dump/resize log\n"
 "  -help                                      This usage list\n"
 /*"  -r     =<addr>                           Get routes to domain\n" */
-"  -lc    =<bearername>,<et:he:ra:dd:re:ss>   Create link\n"
+"  -lc    =<bearername>,<addr>                Create link\n"
+"          [/<et:he:ra:dd:re:ss>]             \n"
 "  -ld    =<linkname>                         Delete link \n"
 #if 0
 "  -lb    =<linkname>                         Block link \n"
