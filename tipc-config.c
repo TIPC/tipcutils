@@ -1510,9 +1510,9 @@ static char usage[] =
 "  -log  [=<size>]                            Dump/resize log\n"
 "  -help                                      This usage list\n"
 /*"  -r     =<addr>                           Get routes to domain\n" */
-"  -lc    =<bearername>,<addr>                Create link\n"
-"          [/<et:he:ra:dd:re:ss>]             \n"
-"  -ld    =<linkname>                         Delete link \n"
+"  -lc    =<bearer>,<addr> \n"
+"          [/<et:he:ra:dd:re:ss>]             Create link\n"
+"  -ld    =<bearer>,<addr> | <linkname>       Delete link \n"
 #if 0
 "  -lb    =<linkname>                         Block link \n"
 "  -lu    =<linkname>                         Unblock link\n"
