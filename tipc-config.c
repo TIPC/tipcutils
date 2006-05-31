@@ -1460,9 +1460,9 @@ static char usage[] =
 "  -p                                         Get port info\n"
 #else
 "  -p    [=all|bound|connected|<port>]        Get port info\n"
-#endif
 "  -ps    =<port>                             Get port statistics\n"
 "  -psr   =<port>                             Reset port statistics\n"
+#endif
 "  -m                                         Get media\n"
 "  -b                                         Get bearers\n"
 "  -be    =<bname>[/<scope>[/<priority>]]]    Enable bearer\n"
