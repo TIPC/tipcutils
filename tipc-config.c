@@ -117,6 +117,7 @@ static __u32 own_node(void)
 		fatal("TIPC module not installed\n");
 	if (getsockname(sd, (struct sockaddr *)&addr, &sz) < 0)
 		fatal("failed to get TIPC socket address\n");
+	close(sd);
 	return addr.addr.id.node;
 }
 
