@@ -142,16 +142,19 @@ static const char *for_dest(void)
 	return addr_area;
 }
 
-char *get_arg(char *args)
+char *get_arg(char **args)
 {
-	static char *nxt = (char *) -1;
-	char *ret = (nxt == (char *) -1) ? args : nxt;
+	char *ret;
+	char *comma;
 
-	if (ret) {
-		nxt = strchr(ret, ',');
-		if (nxt)
-			*nxt++ = 0;
+	ret = *args;
+	comma = strchr(ret, ',');
+	if (comma) {
+		*comma = '\0';
+		*args = comma + 1;
 	}
+	else
+		*args = NULL;
 	return ret;
 }
 
@@ -1052,11 +1055,12 @@ static void enable_bearer(char *args)
 	char *a;
 	char dummy;
 
-	while ((a = get_arg(args))) {
+	while (args) {
 		__u32 sc = dest & 0xfffff000; /* defaults to cluster scope */
 		uint pri = TIPC_MEDIA_LINK_PRI; /* defaults to media priority */
 		char *sc_str, *pri_str;
 
+		a = get_arg(&args);
 		if ((sc_str = strchr(a, '/'))) {
 			*sc_str++ = 0;
 			if ((pri_str = strchr(sc_str, '/'))) {
@@ -1097,7 +1101,8 @@ static void disable_bearer(char *args)
 	int tlv_space;
 	char *a;
 
-	while ((a = get_arg(args))) {
+	while (args) {
+		a = get_arg(&args);
 		confirm("Disable bearer <%s>%s ? [Y/n]", a, for_dest());
 		strncpy(bearer_name, a, TIPC_MAX_BEARER_NAME - 1);
 		bearer_name[TIPC_MAX_BEARER_NAME - 1] = '\0';
