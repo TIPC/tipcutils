@@ -2,7 +2,7 @@
  * tipc-config.c: TIPC configuration tool
  * 
  * Copyright (c) 2004-2006, Ericsson AB
- * Copyright (c) 2005, Wind River Systems
+ * Copyright (c) 2005-2006, Wind River Systems
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,6 +46,10 @@
 #include <linux/tipc_config.h>
 #include <linux/genetlink.h>
 
+/* typedefs */
+
+typedef void (*VOIDFUNCPTR) ();
+
 /* constants */
 
 #define MAX_COMMANDS 8
@@ -57,6 +61,7 @@ static int verbose = 0;
 static int interactive = 0;
 static __u32 dest = 0;
 static __u32 tlv_area[MAX_TLVS_SPACE / sizeof(__u32)];
+static __u32 tlv_list_area[MAX_TLVS_SPACE / sizeof(__u32)];
 
 /* forward declarations */
 
@@ -68,7 +73,7 @@ static char usage[];
 
 #define fatal(fmt, arg...)	do { printf(fmt, ##arg); exit(EXIT_FAILURE); } while (0)
 
-#define confirm(fmt,arg...) do { \
+#define confirm(fmt, arg...) do { \
 		char c; \
 		if (interactive) { \
 			printf(fmt, ##arg); \
@@ -109,7 +114,7 @@ static inline int delimit(int val, int min, int max)
 static __u32 own_node(void)
 {
 	struct sockaddr_tipc addr;
-	int sz = sizeof(addr);
+	socklen_t sz = sizeof(addr);
 	int sd;
 
 	sd = socket(AF_TIPC, SOCK_RDM, 0);
@@ -238,8 +243,9 @@ static int write_uninterrupted(int sk, const char *buf, int len)
 	return 0;
 }
 
-static int genetlink_call(__u16 family_id, __u8 cmd, void *header, size_t header_len,
-			  void *request, size_t request_len, void *reply, size_t reply_len)
+static int genetlink_call(__u16 family_id, __u8 cmd, void *header, 
+		size_t header_len, void *request, size_t request_len, 
+		void *reply, size_t reply_len)
 {
 	struct msg {
 		struct nlmsghdr n;
@@ -748,73 +754,130 @@ static void get_nodes(char *args)
 	}
 }
 
-static void get_links(char *args)
+/**
+ * do_these_links - perform operation on specified set of links 
+ * @funcToRun: operation to be performed on link
+ * @domain: network domain of interest (0.0.0 if not used)
+ * @str: link name pattern of interest (NULL if not used)
+ * @vname: name of the parameter being set (optional arg to 'funcToRun')
+ * @cmd: command to execute (optional arg to 'funcToRun')
+ * @val: new value to be set (optional arg to 'funcToRun')
+ *
+ * This routine first retrieves the names of all links in the specified 
+ * network domain, eliminates those that don't match the specified search
+ * pattern, and then performs the requestion operation on each remaining link.
+ */
+
+static void do_these_links(VOIDFUNCPTR funcToRun, __u32 domain, const char *str,
+			   const char *vname, int cmd, int val)
 {
 	int tlv_space;
-	__u32 domain;
+	int numLinks = 0;
 	__u32 domain_net;
 	struct tlv_list_desc tlv_list;
-	struct tipc_link_info *link_info;
+	struct tipc_link_info *local_link_info;
 
-	domain = (*args != 0) ? str2addr(args) : 0;
 	domain_net = htonl(domain);
-	tlv_space = TLV_SET(tlv_area, TIPC_TLV_NET_ADDR,
+	tlv_space = TLV_SET(tlv_list_area, TIPC_TLV_NET_ADDR,
 			    &domain_net, sizeof(domain_net));
-	tlv_space = do_command(TIPC_CMD_GET_LINKS, tlv_area, tlv_space,
-			       tlv_area, sizeof(tlv_area));
+	tlv_space = do_command(TIPC_CMD_GET_LINKS, tlv_list_area, tlv_space,
+			       tlv_list_area, sizeof(tlv_list_area));
+
+	TLV_LIST_INIT(&tlv_list, tlv_list_area, tlv_space);
+
+	while (!TLV_LIST_EMPTY(&tlv_list)) {
+		if (!TLV_LIST_CHECK(&tlv_list, TIPC_TLV_LINK_INFO))
+			fatal("corrupted reply message in do_these_links\n");
+		local_link_info = (struct tipc_link_info *)TLV_LIST_DATA(&tlv_list);
+		if ((str == NULL) ||
+		    (strstr(local_link_info->str, str) != NULL)) {
+			funcToRun(local_link_info->str, local_link_info->up, 
+				  vname, cmd, val);
+			numLinks++;
+		}
+		TLV_LIST_STEP(&tlv_list);
+	}
+
+	if (numLinks == 0) {
+		if (str == NULL)
+			printf("No links found\n");
+		else
+			printf("No links found matching pattern '%s'\n", str);
+	}
+}
+
+static void get_link(char *linkName, __u32 up)
+{
+	printf("%s: %s\n", linkName, ntohl(up) ? "up" : "down");
+}
+
+static void get_linkset(char *args)
+{
+	char *strp = NULL;			/* list all links by default */
+	__u32 domain = 0;
+
+	if (*args != 0) {
+		if (args[0] == '?')
+			strp = args + 1;   	/* list links matching pattern */
+		else
+			domain = str2addr(args);/* list links in domain */
+	}
 
 	printf("Links%s%s%s:\n", for_dest(), 
 	       (domain ? " within domain " : ""),
 	       (domain ? addr2str(domain) : ""));
 
-	if (!tlv_space) {
-		printf("None\n");
-		return;
-	}
-
-	TLV_LIST_INIT(&tlv_list, tlv_area, tlv_space);
-	while (!TLV_LIST_EMPTY(&tlv_list)) {
-		if (!TLV_LIST_CHECK(&tlv_list, TIPC_TLV_LINK_INFO))
-			fatal("corrupted reply message\n");
-		link_info = (struct tipc_link_info *)TLV_LIST_DATA(&tlv_list);
-		printf("%s: %s\n", link_info->str,
-		       ntohl(link_info->up) ? "up" : "down");
-		TLV_LIST_STEP(&tlv_list);
-	}
+	do_these_links(get_link, domain, strp, "", 0, 0);
 }
 
-static void show_link_stats(char *args)
+static void show_link_stats(char *linkName)
 {
-	char link_name[TIPC_MAX_LINK_NAME];
 	int tlv_space;
 
-	strncpy(link_name, args, TIPC_MAX_LINK_NAME - 1);
-	link_name[TIPC_MAX_LINK_NAME - 1] = '\0';
 	tlv_space = TLV_SET(tlv_area, TIPC_TLV_LINK_NAME, 
-			    link_name, sizeof(link_name));
+			    linkName, TIPC_MAX_LINK_NAME);
 	tlv_space = do_command(TIPC_CMD_SHOW_LINK_STATS, tlv_area, tlv_space,
 			       tlv_area, sizeof(tlv_area));
 
 	if (!TLV_CHECK(tlv_area, tlv_space, TIPC_TLV_ULTRA_STRING))
-		fatal("corrupted reply message\n");
+		fatal("corrupted reply message in show_link_stats\n");
 
-	printf("%s", (char *)TLV_DATA(tlv_area));
+	printf("%s\n", (char *)TLV_DATA(tlv_area));
 }
 
-static void reset_link_stats(char *args)
+static void show_linkset_stats(char *args)
 {
-	char link_name[TIPC_MAX_LINK_NAME];
+	if (dest != own_node())
+		printf("Link statistics%s\n", for_dest());
+
+	if (*args == 0)			/* show for all links */
+		do_these_links(show_link_stats, 0, NULL, NULL, 0, 0);
+	else if (args[0] == '?') 	/* show for all links matching pattern */
+		do_these_links(show_link_stats, 0, args+1, NULL, 0, 0);
+	else	 			/* show for specified link */
+		show_link_stats(args);
+}
+
+static void reset_link_stats(char *linkName)
+{
 	int tlv_space;
 
-	strncpy(link_name, args, TIPC_MAX_LINK_NAME - 1);
-	link_name[TIPC_MAX_LINK_NAME - 1] = '\0';
 	tlv_space = TLV_SET(tlv_area, TIPC_TLV_LINK_NAME, 
-			    link_name, sizeof(link_name));
+			    linkName, TIPC_MAX_LINK_NAME);
 	tlv_space = do_command(TIPC_CMD_RESET_LINK_STATS, tlv_area, tlv_space,
 			       tlv_area, sizeof(tlv_area));
 
-	cprintf("Link %s statistics reset\n", link_name);
+	cprintf("Link %s statistics reset\n", linkName);
 }
+
+static void reset_linkset_stats(char *args)
+{
+	if (args[0] == '?')
+		do_these_links(reset_link_stats, 0, args+1, NULL, 0, 0);
+	else
+		reset_link_stats(args);
+}
+
 
 static void show_name_table(char *args)
 {
@@ -906,27 +969,59 @@ static void get_media(char *dummy)
 	}
 }
 
-static void get_bearers(char *dummy)
+
+/**
+ * do_these_bearers - perform operation on specified set of bearers 
+ * @funcToRun: operation to be performed on bearer
+ * @str: bearer name pattern (if NULL, do operation on all bearers)
+ */
+
+static void do_these_bearers(VOIDFUNCPTR funcToRun, const char *str)
 {
+	int numBearers = 0;
 	int tlv_space;
 	struct tlv_list_desc tlv_list;
+	char *bname;
 
 	tlv_space = do_command(TIPC_CMD_GET_BEARER_NAMES, NULL, 0,
-			       tlv_area, sizeof(tlv_area));
+			       tlv_list_area, sizeof(tlv_list_area));
 
-	printf("Bearers%s:\n", for_dest());
-	if (!tlv_space) {
-		printf("No active bearers\n");
-		return;
-	}
+	TLV_LIST_INIT(&tlv_list, tlv_list_area, tlv_space);
 
-	TLV_LIST_INIT(&tlv_list, tlv_area, tlv_space);
 	while (!TLV_LIST_EMPTY(&tlv_list)) {
 		if (!TLV_LIST_CHECK(&tlv_list, TIPC_TLV_BEARER_NAME))
 			fatal("corrupted reply message\n");
-		printf("%s\n", (char *)TLV_LIST_DATA(&tlv_list));
+		bname = (char *)TLV_LIST_DATA(&tlv_list);
+		if ((str == NULL) || (strstr(bname, str) != NULL)) {
+			funcToRun(bname);
+			numBearers++;
+		}
 		TLV_LIST_STEP(&tlv_list);
 	}
+
+	if (numBearers == 0) {
+		if (str == NULL)
+			printf("No active bearers\n");
+		else
+			printf("No bearers found matching pattern '%s'\n", str);
+	}
+}
+
+static void get_bearer(char *bname)
+{
+	printf("%s\n", bname);
+}
+
+static void get_bearerset(char *args)
+{
+	printf("Bearers%s:\n", for_dest());
+
+	if (*args == 0)
+		do_these_bearers(get_bearer, NULL);	/* list all bearers */
+	else if (args[0] == '?')
+		do_these_bearers(get_bearer, args+1);	/* list matching ones */
+	else
+		fatal("Invalid argument '%s' \n", args);
 }
 
 static void show_ports(char *dummy)
@@ -1003,28 +1098,24 @@ static void set_log_size(char *args)
 	}
 }
 
-static void set_link_value(char *args, const char *vname, int cmd)
+
+static void set_link_value(char *linkName, __u32 dummy, const char *vname,
+			   int cmd, int val)
 {
 	struct tipc_link_config req_tlv;
 	int tlv_space;
-	int val;
-	char dummy;
-	char *s = strchr(args, '/');
 
-	if (!s)
-		fatal("Syntax: tipc-config -l%c=<link-name>/<%s>\n",
-		    vname[0], vname);
-	*s++ = 0;
-	if (sscanf(s, "%u%c", &val, &dummy) != 1)
-		fatal("non-numeric link %s specified\n", vname);
+	if (strcmp(linkName, "multicast-link") == 0)
+		return;
 
 	req_tlv.value = htonl(val);
-	strncpy(req_tlv.name, args, TIPC_MAX_LINK_NAME - 1);
+	strcpy(req_tlv.name, linkName);
 	req_tlv.name[TIPC_MAX_LINK_NAME - 1] = '\0';
+
 	confirm("Change %s of link <%s>%s to %u? [Y/n]\n",
 		vname, req_tlv.name, for_dest(), val);
 
-	tlv_space = TLV_SET(tlv_area, TIPC_TLV_LINK_CONFIG, 
+	tlv_space = TLV_SET(tlv_area, TIPC_TLV_LINK_CONFIG,
 			    &req_tlv, sizeof(req_tlv));
 	tlv_space = do_command(cmd, tlv_area, tlv_space,
 			       tlv_area, sizeof(tlv_area));
@@ -1033,20 +1124,42 @@ static void set_link_value(char *args, const char *vname, int cmd)
 		req_tlv.name, for_dest(), vname, val);
 }
 
-static void set_link_tolerance(char *args)
+static void set_linkset_value(char *args, const char *vname, int cmd)
 {
-	set_link_value(args, "tolerance", TIPC_CMD_SET_LINK_TOL);
+	int  val;
+	char dummy;
+	char *s = strchr(args, '/');
+
+	if (!s)
+		fatal("Syntax: tipcConfig -l%c=<link-name>|<pattern>/<%s>\n",
+		      vname[0], vname);
+
+	*s++ = 0;
+
+	if (sscanf(s, "%u%c", &val, &dummy) != 1)
+		fatal("non-numeric link %s specified\n", vname);
+
+	if (args[0] == '?')
+		do_these_links(set_link_value, 0, args+1, vname, cmd, val);
+	else
+		set_link_value(args, 0, vname, cmd, val);
 }
 
-static void set_link_priority(char *args)
+static void set_linkset_tolerance(char *args)
 {
-	set_link_value(args, "priority", TIPC_CMD_SET_LINK_PRI);
+	set_linkset_value(args, "tolerance", TIPC_CMD_SET_LINK_TOL);
 }
 
-static void set_link_window(char *args)
+static void set_linkset_priority(char *args)
 {
-	set_link_value(args, "window", TIPC_CMD_SET_LINK_WINDOW);
+	set_linkset_value(args, "priority", TIPC_CMD_SET_LINK_PRI);
 }
+
+static void set_linkset_window(char *args)
+{
+	set_linkset_value(args, "window", TIPC_CMD_SET_LINK_WINDOW);
+}
+
 
 static void enable_bearer(char *args)
 {
@@ -1092,27 +1205,34 @@ static void enable_bearer(char *args)
 
 		cprintf("Bearer <%s> enabled%s\n", a, for_dest());
 	}
-
 }
 
-static void disable_bearer(char *args)
+static void disable_bearer(char *bname)
 {
 	char bearer_name[TIPC_MAX_BEARER_NAME];
 	int tlv_space;
-	char *a;
 
-	while (args) {
-		a = get_arg(&args);
-		confirm("Disable bearer <%s>%s ? [Y/n]", a, for_dest());
-		strncpy(bearer_name, a, TIPC_MAX_BEARER_NAME - 1);
-		bearer_name[TIPC_MAX_BEARER_NAME - 1] = '\0';
+	strncpy(bearer_name, bname, TIPC_MAX_BEARER_NAME - 1);
+	bearer_name[TIPC_MAX_BEARER_NAME - 1] = '\0';
 
-		tlv_space = TLV_SET(tlv_area, TIPC_TLV_BEARER_NAME, 
-				    bearer_name, sizeof(bearer_name));
-		tlv_space = do_command(TIPC_CMD_DISABLE_BEARER, tlv_area, tlv_space,
-				       tlv_area, sizeof(tlv_area));
+	confirm("Disable bearer <%s>%s ? [Y/n]", bearer_name, for_dest());
 
-		cprintf("Bearer <%s> disabled%s\n", args, for_dest());
+	tlv_space = TLV_SET(tlv_area, TIPC_TLV_BEARER_NAME, 
+			    bearer_name, sizeof(bearer_name));
+	tlv_space = do_command(TIPC_CMD_DISABLE_BEARER, tlv_area, tlv_space,
+			       tlv_area, sizeof(tlv_area));
+
+	cprintf("Bearer <%s> disabled%s\n", bearer_name, for_dest());
+}
+
+static void disable_bearerset(char *args)
+{
+	if (args[0] == '?')
+		do_these_bearers(disable_bearer, args+1); /* name pattern */
+	else {
+		while (args) {				
+			disable_bearer(get_arg(&args)); /* list of names */
+		}
 	}
 }
 
@@ -1454,7 +1574,7 @@ static char usage[] =
 "       tipc-config option [option ...]\n"
 "  \n"
 "  valid options:\n"
-"  -v                                         Verbose\n"
+"  -v                                         Verbose output\n"
 "  -i                                         Interactive set operations\n"
 "  -dest  =<addr>                             Command destination node\n"
 "  -addr [=<addr>]                            Get/set node address\n"
@@ -1470,16 +1590,16 @@ static char usage[] =
 "  -psr   =<port>                             Reset port statistics\n"
 #endif
 "  -m                                         Get media\n"
-"  -b                                         Get bearers\n"
+"  -b    [=<pattern>]                         Get bearers\n"
 "  -be    =<bname>[/<scope>[/<priority>]]]    Enable bearer\n"
-"  -bd    =<bname>                            Disable bearer\n"
+"  -bd    =<bname>|<pattern>                  Disable bearer\n"
 "  -n    [=<addr>]                            Get nodes in domain\n"
-"  -l    [=<addr>]                            Get links to domain\n"
-"  -ls    =<linkname>                         Get links statistics\n"
-"  -lsr   =<linkname>                         Reset links statistics\n"
-"  -lp    =<linkname>/<val>                   Set link priority\n"
-"  -lw    =<linkname>/<val>                   Set link window\n"
-"  -lt    =<linkname>/<val>                   Set link tolerance\n"
+"  -l    [=<addr>|<pattern>]                  Get links for domain\n"
+"  -ls   [=<linkname>|<pattern>]              Get link statistics\n"
+"  -lsr   =<linkname>|<pattern>               Reset link statistics\n"
+"  -lp    =<linkname>|<pattern>/<value>       Set link priority\n"
+"  -lt    =<linkname>|<pattern>/<value>       Set link tolerance\n"
+"  -lw    =<linkname>|<pattern>/<value>       Set link window\n"
 "  -max_ports | -max_publ | -max_subscr |     Get/set max number of ports,\n"
 "  -max_zones | -max_clusters | -max_nodes |  publications, etc.\n"
 "  -max_slaves [=<value>]                     \n"
@@ -1496,9 +1616,19 @@ static char usage[] =
 "  -la    =<linkname>                         Get link peer address\n"
 "  -zm                                        Get zone master\n"
 "        [=enable|disable ]                   Assume/relinquish zone\n"
-"                                             master control\n"
 #endif
 ; /* end of concatenated string literal */
+
+/*
+ * Option structure field usage in tipc-config application:
+ *	1) option name
+ *	2) argument count
+ *		0 if argument is not allowed
+ *		1 if argument is required
+ *		2 if argument is optional
+ *	3) always set to 0 
+ *	4) value to return
+ */
 
 static struct option options[] = {
 	{"help",         0, 0, '0'},
@@ -1515,7 +1645,7 @@ static struct option options[] = {
 	{"psr",          1, 0, OPT_BASE + 6},
 #endif
 	{"m",            0, 0, OPT_BASE + 7},
-	{"b",            0, 0, OPT_BASE + 8},
+	{"b",            2, 0, OPT_BASE + 8},
 	{"be",           1, 0, OPT_BASE + 9},
 	{"bd",           1, 0, OPT_BASE + 10},
 	{"n",            2, 0, OPT_BASE + 11},
@@ -1523,7 +1653,7 @@ static struct option options[] = {
 	{"r",            1, 0, OPT_BASE + 12},
 #endif
 	{"l",            2, 0, OPT_BASE + 13},
-	{"ls",           1, 0, OPT_BASE + 14},
+	{"ls",           2, 0, OPT_BASE + 14},
 	{"lsr",          1, 0, OPT_BASE + 15},
 #if 0
 	{"lc",           2, 0, OPT_BASE + 16},
@@ -1531,9 +1661,9 @@ static struct option options[] = {
 	{"lb",           2, 0, OPT_BASE + 18},
 	{"lu",           2, 0, OPT_BASE + 19},
 #endif
-	{"lp",           2, 0, OPT_BASE + 20},
-	{"lw",           2, 0, OPT_BASE + 21},
-	{"lt",           2, 0, OPT_BASE + 22},
+	{"lp",           1, 0, OPT_BASE + 20},
+	{"lw",           1, 0, OPT_BASE + 21},
+	{"lt",           1, 0, OPT_BASE + 22},
 #if 0
 	{"la",           2, 0, OPT_BASE + 23},
 	{"zm",           2, 0, OPT_BASE + 24},
@@ -1558,21 +1688,21 @@ void (*cmd_array[])(char *args) = {
 	NULL, /* show_port_stats, */
 	NULL, /* reset_port_stats, */
 	get_media,
-	get_bearers,
+	get_bearerset,
 	enable_bearer,
-	disable_bearer,
+	disable_bearerset,
 	get_nodes,
 	NULL, /* get routes */
-	get_links,
-	show_link_stats,
-	reset_link_stats,
+	get_linkset,
+	show_linkset_stats,
+	reset_linkset_stats,
 	NULL, /* create link */
 	NULL, /* delete link */
 	NULL, /* link_block */
 	NULL, /* link_unblock */
-	set_link_priority,
-	set_link_window,
-	set_link_tolerance,
+	set_linkset_priority,
+	set_linkset_window,
+	set_linkset_tolerance,
 	NULL, /* get_peer_address */
 	NULL, /* zone master */
 	set_max_ports,
