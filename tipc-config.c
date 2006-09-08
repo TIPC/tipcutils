@@ -1604,6 +1604,7 @@ static char usage[] =
 "  -max_zones | -max_clusters | -max_nodes |  publications, etc.\n"
 "  -max_slaves [=<value>]                     \n"
 "  -log  [=<size>]                            Dump/resize log\n"
+"  -V                                         Program version\n"
 "  -help                                      This usage list\n"
 #if 0
 "  -r     =<addr>                             Get routes to domain\n"
@@ -1635,6 +1636,7 @@ static struct option options[] = {
 	{"v",            0, 0, '1'},
 	{"i",            0, 0, '2'},
 	{"dest",         1, 0, '3'},
+	{"V",            0, 0, '4'},
 	{"addr",         2, 0, OPT_BASE + 0},
 	{"netid",        2, 0, OPT_BASE + 1},
 	{"mng",          2, 0, OPT_BASE + 2},
@@ -1759,6 +1761,10 @@ int main(int argc, char *argv[], char *dummy[])
 				break;
 			case '3':
 				dest = str2addr(optarg);
+				break;
+			case '4':
+				printf("TIPC configuration tool version "
+				       VERSION "\n");
 				break;
 			default:
 				/* getopt_long_only() generates the error msg */
