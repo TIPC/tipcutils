@@ -468,7 +468,7 @@ static int do_command_tipc(__u16 cmd, void *req_tlv, __u32 req_tlv_space,
 	tipc_dest.addrtype = TIPC_ADDR_NAME;
 	tipc_dest.addr.name.name.type = TIPC_CFG_SRV;
 	tipc_dest.addr.name.name.instance = dest;
-	tipc_dest.addr.name.domain = 0;
+	tipc_dest.addr.name.domain = dest;
 
 	if (sendto(tsd, &req, msg_space, 0,
 		   (struct sockaddr *)&tipc_dest, sizeof(tipc_dest)) < 0)
