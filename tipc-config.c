@@ -124,10 +124,10 @@ static __u32 own_node(void)
 
 static const char *addr2str(__u32 addr)
 {
-	static char addr_area[2][16];
+	static char addr_area[4][16];	/* allow up to 4 uses in one printf() */
 	static int addr_crs = 0;
 
-	addr_crs = !addr_crs;
+	addr_crs = (addr_crs + 1) & 3;
 	sprintf(&addr_area[addr_crs][0], "<%u.%u.%u>",
 		tipc_zone(addr), tipc_cluster(addr), tipc_node(addr));
 	return &addr_area[addr_crs][0];
@@ -745,6 +745,45 @@ static void get_nodes(char *args)
 		node_info = (struct tipc_node_info *)TLV_LIST_DATA(&tlv_list);
 		printf("%s: %s\n", addr2str(ntohl(node_info->addr)),
 		       ntohl(node_info->up) ? "up" : "down");
+		TLV_LIST_STEP(&tlv_list);
+	}
+}
+
+static void get_routes(char *args)
+{
+	int tlv_space;
+	__u32 domain;
+	__u32 domain_net;
+	struct tlv_list_desc tlv_list;
+	struct tipc_route_info *route_info;
+
+	domain = (*args != 0) ? str2addr(args) : 0;
+	domain_net = htonl(domain);
+	tlv_space = TLV_SET(tlv_area, TIPC_TLV_NET_ADDR,
+			    &domain_net, sizeof(domain_net));
+	tlv_space = do_command(TIPC_CMD_GET_ROUTES, tlv_area, tlv_space,
+			       tlv_area, sizeof(tlv_area));
+
+	printf("Routes%s%s%s:\n", for_dest(), 
+	       (domain ? " to " : ""),
+	       (domain ? addr2str(domain) : ""));
+
+	if (!tlv_space) {
+		printf("None\n");
+		return;
+	}
+
+	printf("Destination     Local router    Remote router\n");
+
+	TLV_LIST_INIT(&tlv_list, tlv_area, tlv_space);
+	while (!TLV_LIST_EMPTY(&tlv_list)) {
+		if (!TLV_LIST_CHECK(&tlv_list, TIPC_TLV_ROUTE_INFO))
+			fatal("corrupted reply message\n");
+		route_info = (struct tipc_route_info *)TLV_LIST_DATA(&tlv_list);
+		printf("%-15s %-15s %-15s\n", 
+		       addr2str(ntohl(route_info->remote_addr)),
+		       addr2str(ntohl(route_info->local_router)),
+		       addr2str(ntohl(route_info->remote_router)));
 		TLV_LIST_STEP(&tlv_list);
 	}
 }
@@ -1504,6 +1543,7 @@ static char usage[] =
 "  -be    =<bname>[/<scope>[/<priority>]]]    Enable bearer\n"
 "  -bd    =<bname>                            Disable bearer\n"
 "  -n    [=<addr>]                            Get nodes in domain\n"
+"  -r    [=<addr>]                            Get routes to domain\n"
 "  -l    [=<addr>]                            Get links to domain\n"
 "  -ls    =<linkname>                         Get links statistics\n"
 "  -lsr   =<linkname>                         Reset links statistics\n"
@@ -1515,7 +1555,6 @@ static char usage[] =
 "  -max_slaves [=<value>]                     \n"
 "  -log  [=<size>]                            Dump/resize log\n"
 "  -help                                      This usage list\n"
-/*"  -r     =<addr>                           Get routes to domain\n" */
 "  -lc    =<bearer>,<addr> | \n"
 "                   <et:he:ra:dd:re:ss>       Create link\n"
 "  -ld    =<bearer>,<addr> | <linkname>       Delete link \n"
@@ -1548,9 +1587,7 @@ static struct option options[] = {
 	{"be",           1, 0, OPT_BASE + 9},
 	{"bd",           1, 0, OPT_BASE + 10},
 	{"n",            2, 0, OPT_BASE + 11},
-#if 0
-	{"r",            1, 0, OPT_BASE + 12},
-#endif
+	{"r",            2, 0, OPT_BASE + 12},
 	{"l",            2, 0, OPT_BASE + 13},
 	{"ls",           1, 0, OPT_BASE + 14},
 	{"lsr",          1, 0, OPT_BASE + 15},
@@ -1591,7 +1628,7 @@ void (*cmd_array[])(char *args) = {
 	enable_bearer,
 	disable_bearer,
 	get_nodes,
-	NULL, /* get routes */
+	get_routes,
 	get_links,
 	show_link_stats,
 	reset_link_stats,
