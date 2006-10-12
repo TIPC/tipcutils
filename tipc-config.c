@@ -375,11 +375,14 @@ static int get_genl_family_id(const char* name)
 
 	/*
 	 * Create request/reply buffers
+	 *
+	 * Note that the reply buffer is larger than necessary in case future
+	 * versions of Netlink return additional protocol family attributes
 	 */
 	char request[NLA_SIZE(struct nlattr_family_name)];
 	int request_len = nla_put_string((struct nlattr *)request, CTRL_ATTR_FAMILY_NAME, name);
 
-	char reply[NLA_SIZE(struct nlattr_family_name) + NLA_SIZE(struct nlattr_family_id)];
+	char reply[256];
 	int reply_len = sizeof(reply);
 
 	/*
