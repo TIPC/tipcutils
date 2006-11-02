@@ -922,6 +922,7 @@ static void reset_linkset_stats(char *args)
 }
 
 
+#if 0
 static void create_link(char *args)
 {
 	char create_link_cmd[TIPC_MAX_BEARER_NAME + TIPC_MAX_MEDIA_ADDR + TIPC_MAX_ADDR + 1];
@@ -952,7 +953,7 @@ static void delete_link(char *args)
 
 	cprintf("Deleted link %s\n", link_name);
 }
-
+#endif
 
 static void show_name_table(char *args)
 {
@@ -1679,10 +1680,10 @@ static char usage[] =
 "  -log  [=<size>]                            Dump/resize log\n"
 "  -V                                         Program version\n"
 "  -help                                      This usage list\n"
+#if 0
 "  -lc    =<bearer>,<addr> | \n"
 "                   <et:he:ra:dd:re:ss>       Create link\n"
 "  -ld    =<bearer>,<addr> | <linkname>       Delete link \n"
-#if 0
 "  -lb    =<linkname>                         Block link \n"
 "  -lu    =<linkname>                         Unblock link\n"
 "  -la    =<linkname>                         Get link peer address\n"
@@ -1726,9 +1727,9 @@ static struct option options[] = {
 	{"l",            2, 0, OPT_BASE + 13},
 	{"ls",           2, 0, OPT_BASE + 14},
 	{"lsr",          1, 0, OPT_BASE + 15},
+#if 0
 	{"lc",           2, 0, OPT_BASE + 16},
 	{"ld",           2, 0, OPT_BASE + 17},
-#if 0
 	{"lb",           2, 0, OPT_BASE + 18},
 	{"lu",           2, 0, OPT_BASE + 19},
 #endif
@@ -1767,8 +1768,8 @@ void (*cmd_array[])(char *args) = {
 	get_linkset,
 	show_linkset_stats,
 	reset_linkset_stats,
-	create_link,
-	delete_link,
+	NULL, /* create_link */
+	NULL, /* delete_link */
 	NULL, /* link_block */
 	NULL, /* link_unblock */
 	set_linkset_priority,
