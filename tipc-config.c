@@ -1205,29 +1205,29 @@ static void enable_bearer(char *args)
 	char dummy;
 
 	while (args) {
-		__u32 sc = dest & 0xfffff000; /* defaults to cluster scope */
+		__u32 domain = dest & 0xfffff000; /* defaults to own cluster */
 		uint pri = TIPC_MEDIA_LINK_PRI; /* defaults to media priority */
-		char *sc_str, *pri_str;
+		char *domain_str, *pri_str;
 
 		a = get_arg(&args);
-		if ((sc_str = strchr(a, '/'))) {
-			*sc_str++ = 0;
-			if ((pri_str = strchr(sc_str, '/'))) {
+		if ((domain_str = strchr(a, '/'))) {
+			*domain_str++ = 0;
+			if ((pri_str = strchr(domain_str, '/'))) {
 				*pri_str++ = 0;
 				if ((*pri_str != 0) &&
 				    sscanf(pri_str, "%u%c", &pri, &dummy) != 1)
 					fatal("non-numeric bearer priority specified\n");
 			}
-			if (*sc_str != 0)
-				sc = str2addr(sc_str);
+			if (*domain_str != 0)
+				domain = str2addr(domain_str);
 		}
 
-		confirm("Enable bearer <%s>%s with detection scope %s and "
+		confirm("Enable bearer <%s>%s with detection domain %s and "
 			"priority %u? [Y/n]",
-			a, for_dest(), addr2str(sc), pri);
+			a, for_dest(), addr2str(domain), pri);
 
 		req_tlv.priority = htonl(pri);
-		req_tlv.detect_scope = htonl(sc);
+		req_tlv.disc_domain = htonl(domain);
 		strncpy(req_tlv.name, a, TIPC_MAX_BEARER_NAME - 1);
 		req_tlv.name[TIPC_MAX_BEARER_NAME - 1] = '\0';
 
@@ -1624,7 +1624,7 @@ static char usage[] =
 #endif
 "  -m                                         Get media\n"
 "  -b    [=<pattern>]                         Get bearers\n"
-"  -be    =<bname>[/<scope>[/<priority>]]]    Enable bearer\n"
+"  -be    =<bname>[/<domain>[/<priority>]]]   Enable bearer\n"
 "  -bd    =<bname>|<pattern>                  Disable bearer\n"
 "  -n    [=<addr>]                            Get nodes in domain\n"
 "  -r    [=<addr>]                            Get routes to domain\n"
