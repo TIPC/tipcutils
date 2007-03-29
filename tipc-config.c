@@ -3,7 +3,7 @@
  * 
  * Copyright (c) 2004-2005, Ericsson Research Canada
  * Copyright (c) 2004-2006, Ericsson AB
- * Copyright (c) 2005-2006, Wind River Systems
+ * Copyright (c) 2005-2007, Wind River Systems
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -146,6 +146,29 @@ static const char *for_dest(void)
 		return "";
 	sprintf(addr_area, " for node %s", addr2str(dest));
 	return addr_area;
+}
+
+static const char *for_domain(const char *string, __u32 domain)
+{
+	static char addr_area[30];
+
+	if (domain == 0)
+		return "";
+	sprintf(addr_area, "%s%s", string, addr2str(domain));
+	return addr_area;
+}
+
+static void print_title(const char *main_title, const char *extra_title)
+{
+	printf(main_title, for_dest(), extra_title);
+}
+
+static void print_title_opt(const char *main_title, const char *extra_title)
+{
+	if ((dest == own_node()) && (extra_title[0] == '\0'))
+		return;
+
+	printf(main_title, for_dest(), extra_title);
 }
 
 char *get_arg(char **args)
@@ -698,12 +721,9 @@ static void get_nodes(char *args)
 	tlv_space = do_command(TIPC_CMD_GET_NODES, tlv_area, tlv_space,
 			       tlv_area, sizeof(tlv_area));
 
-	printf("Nodes known%s%s%s:\n", for_dest(), 
-	       (domain ? " within domain " : ""),
-	       (domain ? addr2str(domain) : ""));
-
+	print_title("Neighbors%s%s:\n", for_domain(" within domain ", domain));
 	if (!tlv_space) {
-		printf("None\n");
+		printf("No nodes found\n");
 		return;
 	}
 
@@ -733,16 +753,13 @@ static void get_routes(char *args)
 	tlv_space = do_command(TIPC_CMD_GET_ROUTES, tlv_area, tlv_space,
 			       tlv_area, sizeof(tlv_area));
 
-	printf("Routes%s%s%s:\n", for_dest(), 
-	       (domain ? " to " : ""),
-	       (domain ? addr2str(domain) : ""));
-
-	if (!tlv_space) {
-		printf("None\n");
+	print_title_opt("Routes%s%s:\n", for_domain(" to ", domain));
+	if (tlv_space == 0) {
+		printf("No routes found\n");
 		return;
 	}
 
-	printf("Destination     Local router    Remote router\n");
+	printf("Region          Local router    Remote router\n");
 
 	TLV_LIST_INIT(&tlv_list, tlv_area, tlv_space);
 	while (!TLV_LIST_EMPTY(&tlv_list)) {
@@ -826,9 +843,7 @@ static void get_linkset(char *args)
 			domain = str2addr(args);/* list links in domain */
 	}
 
-	printf("Links%s%s%s:\n", for_dest(), 
-	       (domain ? " within domain " : ""),
-	       (domain ? addr2str(domain) : ""));
+	print_title("Links%s%s:\n", for_domain(" within domain ", domain));
 
 	do_these_links(get_link, domain, strp, "", 0, 0);
 }
@@ -850,8 +865,7 @@ static void show_link_stats(char *linkName)
 
 static void show_linkset_stats(char *args)
 {
-	if (dest != own_node())
-		printf("Link statistics%s\n", for_dest());
+	print_title("Link statistics%s:\n", NULL);
 
 	if (*args == 0)			/* show for all links */
 		do_these_links(show_link_stats, 0, NULL, NULL, 0, 0);
@@ -979,6 +993,7 @@ static void show_name_table(char *args)
 	if (!TLV_CHECK(tlv_area, tlv_space, TIPC_TLV_ULTRA_STRING))
 		fatal("corrupted reply message\n");
 
+	print_title_opt("Names%s:\n", "");
 	printf("%s", (char *)TLV_DATA(tlv_area));
 }
 
@@ -990,7 +1005,7 @@ static void get_media(char *dummy)
 	tlv_space = do_command(TIPC_CMD_GET_MEDIA_NAMES, NULL, 0,
 			       tlv_area, sizeof(tlv_area));
 
-	printf("Media%s:\n", for_dest());
+	print_title("Media%s:\n", NULL);
 	if (!tlv_space) {
 		printf("No registered media\n");
 		return;
@@ -1050,7 +1065,7 @@ static void get_bearer(char *bname)
 
 static void get_bearerset(char *args)
 {
-	printf("Bearers%s:\n", for_dest());
+	print_title("Bearers%s:\n", NULL);
 
 	if (*args == 0)
 		do_these_bearers(get_bearer, NULL);	/* list all bearers */
@@ -1070,7 +1085,8 @@ static void show_ports(char *dummy)
 	if (!TLV_CHECK(tlv_area, tlv_space, TIPC_TLV_ULTRA_STRING))
 		fatal("corrupted reply message\n");
 
-	printf("Ports%s:\n%s", for_dest(), (char *)TLV_DATA(tlv_area));
+	print_title("Ports%s:\n", NULL);
+	printf("%s", (char *)TLV_DATA(tlv_area));
 }
 
 #if 0
