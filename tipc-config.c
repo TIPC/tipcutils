@@ -672,8 +672,8 @@ static void set_max_ports(char *args)
 		printf("maximum allowed ports%s: %u\n", for_dest(),
 		       do_get_unsigned(TIPC_CMD_GET_MAX_PORTS));
 	else
-		do_set_unsigned(args, TIPC_CMD_SET_MAX_PORTS, "max ports",
-				" (this will restart TIPC)");
+		do_set_unsigned(args, TIPC_CMD_SET_MAX_PORTS,
+				"max ports", "");
 }
 
 static void set_max_publ(char *args)
@@ -696,14 +696,54 @@ static void set_max_subscr(char *args)
 				"max subscriptions", "");
 }
 
+static void set_max_zones(char *args)
+{
+	if (!*args)
+		printf("maximum allowed zones%s: %u\n", for_dest(),
+		       do_get_unsigned(TIPC_CMD_GET_MAX_ZONES));
+	else
+		do_set_unsigned(args, TIPC_CMD_SET_MAX_ZONES,
+				"max zones", "");
+}
+
+static void set_max_clusters(char *args)
+{
+	if (!*args)
+		printf("maximum allowed clusters%s: %u\n", for_dest(),
+		       do_get_unsigned(TIPC_CMD_GET_MAX_CLUSTERS));
+	else
+		do_set_unsigned(args, TIPC_CMD_SET_MAX_CLUSTERS,
+				"max clusters", "");
+}
+
+static void set_max_nodes(char *args)
+{
+	if (!*args)
+		printf("maximum allowed nodes%s: %u\n", for_dest(),
+		       do_get_unsigned(TIPC_CMD_GET_MAX_NODES));
+	else
+		do_set_unsigned(args, TIPC_CMD_SET_MAX_NODES,
+				"max nodes", "");
+}
+
+static void set_max_remotes(char *args)
+{
+	if (!*args)
+		printf("maximum allowed remote nodes%s: %u\n", for_dest(),
+		       do_get_unsigned(TIPC_CMD_GET_MAX_REMOTES));
+	else
+		do_set_unsigned(args, TIPC_CMD_SET_MAX_REMOTES,
+				"max remote nodes", "");
+}
+
 static void set_netid(char *args)
 {
 	if (!*args)
 		printf("current network id%s: %u\n", for_dest(),
 		       do_get_unsigned(TIPC_CMD_GET_NETID));
 	else
-		do_set_unsigned(args, TIPC_CMD_SET_NETID, "network identity",
-				" (this will reset all links)");
+		do_set_unsigned(args, TIPC_CMD_SET_NETID,
+				"network identity", "");
 }
 
 static void get_nodes(char *args)
@@ -1650,9 +1690,13 @@ static char usage[] =
 "  -lp    =<linkname>|<pattern>/<value>       Set link priority\n"
 "  -lt    =<linkname>|<pattern>/<value>       Set link tolerance\n"
 "  -lw    =<linkname>|<pattern>/<value>       Set link window\n"
-"  -max_ports [=<value>]                      Get/set max number of ports\n"
-"  -max_publ  [=<value>]                      Get/set max number of publications\n"
-"  -max_subscr[=<value>]                      Get/set max number of subscriptions\n"
+"  -max_ports    [=<value>]                   Get/set max number of ports\n"
+"  -max_nodes    [=<value>]                   Get/set max nodes in own cluster\n"
+"  -max_clusters [=<value>]                   Get/set max clusters in own zone\n"
+"  -max_zones    [=<value>]                   Get/set max zones in own network\n"
+"  -max_remotes  [=<value>]                   Get/set max non-cluster neighbors\n"
+"  -max_publ     [=<value>]                   Get/set max publications\n"
+"  -max_subscr   [=<value>]                   Get/set max subscriptions\n"
 "  -log  [=<size>]                            Dump/resize log\n"
 "  -V                                         Program version\n"
 "  -help                                      This usage list\n"
@@ -1719,12 +1763,10 @@ static struct option options[] = {
 	{"max_ports",    2, 0, OPT_BASE + 25},
 	{"max_subscr",   2, 0, OPT_BASE + 26},
 	{"max_publ",     2, 0, OPT_BASE + 27},
-#if 0
 	{"max_zones",    2, 0, OPT_BASE + 28},
 	{"max_clusters", 2, 0, OPT_BASE + 29},
 	{"max_nodes",    2, 0, OPT_BASE + 30},
-	{"max_slaves",   2, 0, OPT_BASE + 31},
-#endif
+	{"max_remotes",  2, 0, OPT_BASE + 31},
 	{"log",          2, 0, OPT_BASE + 32},
 	{0, 0, 0, 0}
 };
@@ -1758,10 +1800,10 @@ void (*cmd_array[])(char *args) = {
 	set_max_ports,
 	set_max_subscr,
 	set_max_publ,
-	NULL, /* set_max_zones */
-	NULL, /* set_max_clusters */
-	NULL, /* set_max_nodes */
-	NULL, /* set_max_slaves */
+	set_max_zones,
+	set_max_clusters,
+	set_max_nodes,
+	set_max_remotes,
 	set_log_size,
 	NULL
 };
