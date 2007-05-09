@@ -6,7 +6,7 @@ ifndef KERNELDIR
 	KERNELDIR = /usr/src/linux
 endif
 
-VERSION = 1.1.2
+VERSION = 1.1.3
 CFLAGS = -Wall -O2 -I${KERNELDIR}/include -D VERSION=\"${VERSION}\"
 
 all: tipc-config
