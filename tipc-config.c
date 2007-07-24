@@ -1190,6 +1190,28 @@ static void set_log_size(char *args)
 	}
 }
 
+static void show_stats(char *args)
+{
+	__u32 attr_val_net;
+	int tlv_space;
+
+	/*
+	 * In future, may allow user to control what info is returned;
+	 * for now, just hard code 0 as command argument to get default info
+	 */
+
+	attr_val_net = htonl(0);
+	tlv_space = TLV_SET(tlv_area, TIPC_TLV_UNSIGNED, 
+			    &attr_val_net, sizeof(attr_val_net));
+
+	tlv_space = do_command(TIPC_CMD_SHOW_STATS, tlv_area, tlv_space,
+			       tlv_area, sizeof(tlv_area));
+
+	if (!TLV_CHECK(tlv_area, tlv_space, TIPC_TLV_ULTRA_STRING))
+		fatal("corrupted reply message\n");
+
+	printf("%s", (char *)TLV_DATA(tlv_area));
+}
 
 static void set_link_value(char *linkName, __u32 dummy, const char *vname,
 			   int cmd, int val)
@@ -1197,7 +1219,7 @@ static void set_link_value(char *linkName, __u32 dummy, const char *vname,
 	struct tipc_link_config req_tlv;
 	int tlv_space;
 
-	if (strcmp(linkName, "multicast-link") == 0)
+	if (strcmp(linkName, "broadcast-link") == 0)
 		return;
 
 	req_tlv.value = htonl(val);
@@ -1698,7 +1720,8 @@ static char usage[] =
 "  -max_publ     [=<value>]                   Get/set max publications\n"
 "  -max_subscr   [=<value>]                   Get/set max subscriptions\n"
 "  -log  [=<size>]                            Dump/resize log\n"
-"  -V                                         Program version\n"
+"  -s                                         Get TIPC status info\n"
+"  -V                                         Get tipc-config version info\n"
 "  -help                                      This usage list\n"
 #if 0
 "  -lc    =<bearer>,<addr> | \n"
@@ -1768,6 +1791,7 @@ static struct option options[] = {
 	{"max_nodes",    2, 0, OPT_BASE + 30},
 	{"max_remotes",  2, 0, OPT_BASE + 31},
 	{"log",          2, 0, OPT_BASE + 32},
+	{"s",            0, 0, OPT_BASE + 33},
 	{0, 0, 0, 0}
 };
 
@@ -1805,6 +1829,7 @@ void (*cmd_array[])(char *args) = {
 	set_max_nodes,
 	set_max_remotes,
 	set_log_size,
+	show_stats,
 	NULL
 };
 
