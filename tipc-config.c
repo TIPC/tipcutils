@@ -793,7 +793,7 @@ static void get_routes(char *args)
 	tlv_space = do_command(TIPC_CMD_GET_ROUTES, tlv_area, tlv_space,
 			       tlv_area, sizeof(tlv_area));
 
-	print_title_opt("Routes%s%s:\n", for_domain(" to ", domain));
+	print_title_opt("Routes%s:\n", for_domain(" to ", domain));
 	if (tlv_space == 0) {
 		printf("No routes found\n");
 		return;
@@ -847,7 +847,7 @@ static void do_these_links(VOIDFUNCPTR funcToRun, __u32 domain, const char *str,
 
 	while (!TLV_LIST_EMPTY(&tlv_list)) {
 		if (!TLV_LIST_CHECK(&tlv_list, TIPC_TLV_LINK_INFO))
-			fatal("corrupted reply message in do_these_links\n");
+			fatal("corrupted reply message\n");
 		local_link_info = (struct tipc_link_info *)TLV_LIST_DATA(&tlv_list);
 		if ((str == NULL) ||
 		    (strstr(local_link_info->str, str) != NULL)) {
@@ -898,7 +898,7 @@ static void show_link_stats(char *linkName)
 			       tlv_area, sizeof(tlv_area));
 
 	if (!TLV_CHECK(tlv_area, tlv_space, TIPC_TLV_ULTRA_STRING))
-		fatal("corrupted reply message in show_link_stats\n");
+		fatal("corrupted reply message\n");
 
 	printf("%s\n", (char *)TLV_DATA(tlv_area));
 }
@@ -1210,6 +1210,7 @@ static void show_stats(char *args)
 	if (!TLV_CHECK(tlv_area, tlv_space, TIPC_TLV_ULTRA_STRING))
 		fatal("corrupted reply message\n");
 
+	print_title_opt("Status%s:\n", "");
 	printf("%s", (char *)TLV_DATA(tlv_area));
 }
 
