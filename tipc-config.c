@@ -1220,9 +1220,6 @@ static void set_link_value(char *linkName, __u32 dummy, const char *vname,
 	struct tipc_link_config req_tlv;
 	int tlv_space;
 
-	if (strcmp(linkName, "broadcast-link") == 0)
-		return;
-
 	req_tlv.value = htonl(val);
 	strcpy(req_tlv.name, linkName);
 	req_tlv.name[TIPC_MAX_LINK_NAME - 1] = '\0';
