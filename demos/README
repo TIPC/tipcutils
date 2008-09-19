@@ -1,0 +1,93 @@
+Linux TIPC Demo Programs README
+       
+Last updated: 19 September 2008
+
+
+This directory contains a collection of demo programs that have been created
+by TIPC developers.  These programs can be used to verify that TIPC is
+functioning correctly, and to educate software designers who are curious about
+programming using TIPC.
+
+
+Brief descriptions
+------------------
+hello_world
+    Demonstrates a client and a server exchanging "hello world" messages 
+    using connectionless sockets.
+
+connection_demo
+    Demonstrates a client and a server using connection-oriented sockets
+    to exchange messages.
+     
+topology_subscr_demo
+    Demonstrates how a client can subscribe for notification about the
+    availability of a server.
+
+multicast_demo
+    Demonstrates how messages can be multicast to multiple ports.
+
+stream_demo
+    Demonstrates a client and a server exchanging variable length records 
+    using a connection-oriented byte-stream.
+
+inventory_sim
+    A sample application that illustrates how easily distributed processing
+    can be done using TIPC's location-transparent addressing and name
+    subscription capabilities.
+
+benchmark
+    Measures latency and throughtput of messaging between clients and servers.
+
+native_api
+    A directory containing demo programs that utilize TIPC's native API.
+    These demos are loadable modules running in kernel space, rather than
+    standard Linux applications running in user space.  (If you are a typical
+    TIPC user you can ignore these demos; if not, consult the README file
+    contained in the "native_api" directory for additional information.)
+
+
+Building the demos
+------------------
+The following instructions tell you how to build the user-space demos.
+If you want to build the native API demos, see the README file in the
+"native_api" directory for additional information.
+
+
+For a TIPC 1.6 environment, just do a normal build; the demo package makefiles
+should locate the necessary TIPC include files automatically.
+
+eg. cd <top level demo directory>
+    make
+
+If the TIPC include files are not properly located, find the directory that
+contains the files linux/tipc.h and linux/tipc_config.h and specify this
+directory in the make command:
+
+eg. cd <top level demo directory>
+    make INCLUDE_PATH=<path to directory containing linux/tipc.h>
+
+Note: In the standard Linux kernel source tree, this directory is located
+at <top of source tree>/include.
+
+
+Additional rules:
+
+1) make <demo name>	- builds a specific demo
+2) make clean		- deletes the executables for all demos
+
+
+Running the demos
+-----------------
+First, a note of caution: most of these demos contain little or no information
+about how they work, so be prepared to read the code to figure out what's
+going on!
+
+That being said, you'll find that many demos consist of a client program and
+a server program, so all you need to do is to start up a client and a server 
+in two separate windows and watch them do their thing.  You may want to invoke
+each demo first with the client and server running on the same node, and then
+with the client and server running on different nodes, and see how the two
+demonstrations compare.
+
+
+[END OF DOCUMENT]
