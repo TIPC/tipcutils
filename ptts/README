@@ -1,0 +1,87 @@
+Portable TIPC Test Suite for Linux README
+       
+Last updated: 19 September 2008
+
+
+This directory contains the Linux edition of the portable TIPC test suite.
+
+
+Directory contents
+------------------
+tipc_ts.h
+tipc_ts_client.c
+tipc_ts_server.c
+tipc_ts_common.c
+    OS-neutral test suite declarations and routines.
+
+tipc_ts_adapt.h
+tipc_ts_client_linux.c
+tipc_ts_server_linux.c
+    Linux wrapper code for invoking OS-neutral test suite code.
+
+Makefile
+    Makefile for building test suite.
+
+
+Building the test suite
+-----------------------
+For a TIPC 1.6 (or later) installation, just do a normal build; the test suite
+makefile should locate the necessary TIPC include files automatically.
+
+eg. cd <top level test suite directory>
+    make
+
+If the TIPC include files are not properly located, find the directory that
+contains the files linux/tipc.h and linux/tipc_config.h and specify this
+directory in the make command:
+
+eg. cd <top level demo directory>
+    make INCLUDE_PATH=<path to directory containing linux/tipc.h>
+
+Note: In the standard Linux kernel source tree, this directory is located
+at <top of source tree>/include.
+
+
+The build procedure produces two executables (tipcTC and tipcTS), representing
+the "client" and "server" sides of the test suite.
+
+
+Additional rules:
+
+1) make clean		- deletes the test suite executables
+
+
+Running the test suite
+----------------------
+The test suite is executed by running a test server and test client in tandem.
+The client and server can be run on the same node or on different nodes
+(including nodes running TIPC on different OS's).
+
+
+To run the test server, use:
+	./tipcTS
+
+To run the test client, use:
+	./tipcTC [-k] <test>
+	
+Normally only a single test is run; requesting test "0" runs all other tests
+sequentially.  If the "-k" options is specified when the client is invoked
+the test server will be terminated at the conclusion of the test(s); otherwise,
+the test server will be left running so it can be used again by another client.
+
+    NOTE: The client terminates all testing as soon as a failure is detected
+    or when all requested tests have run to completion successfully.
+
+To see additional options for these commands, use the "-h" option.
+
+
+CAUTION
+-------
+This test suite is designed as a verification aid (i.e. indicating that a
+problem exists), not a diagnostics aid (i.e. indicating the source of the
+problem).  Consequently, the failure of a given test means only that there is a
+problem with TIPC somewhere, not that the problem lies in the area being tested!
+
+
+[END OF DOCUMENT]
+

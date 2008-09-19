@@ -4,7 +4,7 @@
 
 export VERSION = 1.1.8
 
-SUBDIRS = tipc-config
+SUBDIRS = tipc-config ptts
 
 .PHONY: subdirs $(SUBDIRS) clean
 
