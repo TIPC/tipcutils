@@ -8,6 +8,7 @@ IFLAGS = -I${INCLUDE_PATH}
 endif
 
 OFLAGS = -Wall -O2
+DFLAGS = -D VERSION=\"${VERSION}\"
 CFLAGS = ${IFLAGS} ${DFLAGS} ${OFLAGS} ${EXTRAS}
 
 all: tipc-config
