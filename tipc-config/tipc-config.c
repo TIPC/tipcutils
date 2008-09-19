@@ -47,6 +47,8 @@
 #include <linux/tipc_config.h>
 #include <linux/genetlink.h>
 
+#define VERSION "1.1.8"
+
 /* typedefs */
 
 typedef void (*VOIDFUNCPTR) ();
