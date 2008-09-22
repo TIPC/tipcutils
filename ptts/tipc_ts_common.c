@@ -6,7 +6,7 @@
  * 
  * ------------------------------------------------------------------------
  *
- * Copyright (c) 2006, Wind River Systems
+ * Copyright (c) 2006,2008 Wind River Systems
  * All rights reserved.
  * Redistribution and use in source and binary forms, with or without 
  * modification, are permitted provided that the following conditions are met:
@@ -323,6 +323,9 @@ int sendErrorTarget			/* number of expected errors */
 	int res;				 /* return code */
 	char failStr[100]; 	 	 /* string for the failure message */
 	
+	if ((numTimes == 0) || (msgSize == 0))
+		return;
+
 	sendErrorCount = 0;
 
 	while (i < numTimes) {
@@ -362,6 +365,9 @@ int sendErrorTarget			/* number of expected errors */
 )
 {
 	char *msgArea;	  /* local pointer to the message */
+
+	if ((numTimes == 0) || (msgSize == 0))
+		return;
 
 	msgArea = (char *)malloc (msgSize);
 	if (msgArea == NULL)
@@ -656,7 +662,7 @@ int sendErrorTarget /* number of send errors to expect */
 	int i;              /* loop counter for the number of messages sent */
 	int res;            /* return code from send */
 
-	if (numTimes == 0)
+	if ((numTimes == 0) || (msgSize == 0))
 		return;
 
 	sendErrorCount = 0;
@@ -698,6 +704,9 @@ int sendErrorTarget /* number of send errors to expect */
 {
 	char *msgArea;      /*  */
 
+	if ((numTimes == 0) || (msgSize == 0))
+		return;
+
 	msgArea = (char*)malloc (msgSize);
 	if (msgArea == NULL)
 		failTest ("unable to allocate send buffer");
@@ -738,13 +747,13 @@ int checkErrorTarget  /* number of check errors to expect */
 	int checkErrorCount;  /* count of the check errors */
 	int res;              /* return code for receive */
 
-	if (numTimes == 0)
+	if ((numTimes == 0) || (maxSize == 0))
 		return;
 
 	msgArea = (char*)malloc (maxSize);	/* currently only call free for the success path */
 										/* failure path results in application being killed */
 	if (msgArea == NULL)
-		failTest ("unable to malloc() receive buffer");
+		failTest ("unable to allocate receive buffer");
 
 	recvErrorCount = 0;
 	checkErrorCount = 0;

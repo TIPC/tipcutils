@@ -6,7 +6,7 @@
  * 
  * ------------------------------------------------------------------------
  *
- * Copyright (c) 2006, Wind River Systems
+ * Copyright (c) 2006,2008 Wind River Systems
  * All rights reserved.
  * Redistribution and use in source and binary forms, with or without 
  * modification, are permitted provided that the following conditions are met:
@@ -73,12 +73,12 @@ int checkErrorTarget/* expected corrupted messages */
 	int requested;		/* total size of the data to receive */
 	int count = 0;		/* count of the received data */
 
-	if (numTimes == 0)
+	if ((numTimes == 0) || (maxSize == 0))
 		return;
 
 	msgArea = (char*)malloc (maxSize);
 	if (msgArea == NULL)
-		failTest ("unable to malloc() receive buffer");
+		failTest ("unable to allocate receive buffer");
 
 	checkErrorCount = 0;
 	requested = numTimes*maxSize;
