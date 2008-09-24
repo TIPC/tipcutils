@@ -6,7 +6,7 @@
  * 
  * ------------------------------------------------------------------------
  *
- * Copyright (c) 2006, Wind River Systems
+ * Copyright (c) 2006,2008 Wind River Systems
  * All rights reserved.
  * Redistribution and use in source and binary forms, with or without 
  * modification, are permitted provided that the following conditions are met:
@@ -128,12 +128,19 @@ unsigned int elapsedTime
 )
 {
 	unsigned int divisor = (elapsedTime == 0) ? 1 : elapsedTime;
+	unsigned int rate;
 
-	/* Compute throughput, avoiding overflow with 32 bit arithmetic */
+	/* Compute throughput, getting best possible precision
+	   without causing overflow in 32 bit arithmetic */
 
-	printf("Sent %d packets of size %d in %d ms (%d bit/s)\n",
-	       TS_BLAST_REPS, packetSize, elapsedTime,
-	       (packetSize * 8 * 1000 / divisor) * TS_BLAST_REPS);
+	rate = packetSize * TS_BLAST_REPS;
+	if (rate <= 536870u)
+		rate = (rate * 8000u) / divisor;
+	else
+		rate = (rate / divisor) * 8000u;
+
+	printf("Sent %d packets of size %d in %d ms (%u bit/s)\n",
+	       TS_BLAST_REPS, packetSize, elapsedTime, rate);
 }
 
 /**
