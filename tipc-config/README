@@ -1,0 +1,44 @@
+tipc-config for Linux README
+       
+Last updated: 01 October 2008
+
+
+This directory contains the configuration tool used with Linux TIPC.
+
+
+Building the tool
+-----------------
+For a TIPC 1.6 (or later) installation, just do a normal build; the tool's
+makefile should locate the necessary TIPC include files automatically.
+
+eg. cd <tipc-config directory>
+    make
+
+
+If the TIPC include files are not properly located, find the directory that
+contains the files linux/tipc.h and linux/tipc_config.h and specify this
+directory in the make command:
+
+eg. cd <tipc-config directory>
+    make INCLUDE_PATH=<path to directory containing linux/tipc.h>
+
+Note: In the standard Linux kernel source tree, this directory is located
+at <top of source tree>/include.
+
+
+The build procedure produces a "tipc-config" exectuable.
+
+
+Additional rules:
+
+1) make clean		- deletes the tipc-config executables
+
+
+Running the tool
+----------------
+Details of the commands provided by tipc-config can be found in the TIPC 1.7
+User's Guide (http://tipc.sourceforge.net/doc/tipc_1.7_users_guide.html).
+
+
+[END OF DOCUMENT]
+

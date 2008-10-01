@@ -1,0 +1,61 @@
+TIPC utilities package for Linux README
+       
+Last updated: 01 October 2008
+
+
+This directory contains a variety of utility programs for use with Linux TIPC,
+including:
+
+1) tipc-config
+An application for run-time configuration and monitoring of TIPC 1.7.
+
+2) PTTS (Portable TIPC Test Suite)
+A basic sanity test suite that can be used to verify that major aspects of TIPC
+are operating correctly.
+
+3) TIPC demos
+A collection of demo programs.  The benchmark and inventory simulation demos
+can be helpful in stressing certain aspects of TIPC beyond the areas covered
+by PTTS.
+
+
+Building the utilities package
+------------------------------
+The master makefile for the utilities package allows you to build all programs
+in a single operation.  (If desired, you can also build a specific utility
+individually from its own sub-directory.)
+
+For a TIPC 1.6 (or later) installation, just do a normal build; the master
+makefile should locate the necessary TIPC include files automatically.
+
+eg. cd <top level utility package directory>
+    make
+
+If the TIPC include files are not properly located, find the directory that
+contains the files linux/tipc.h and linux/tipc_config.h and specify this
+directory in the make command:
+
+eg. cd < level utility package directory>
+    make INCLUDE_PATH=<path to directory containing linux/tipc.h>
+
+Note: In the standard Linux kernel source tree, this directory is located
+at <top of source tree>/include.
+
+
+The build procedure produces executable programs in the various sub-directories
+that make up the package.
+
+
+Additional rules:
+
+1) make clean		- deletes all utility package executables
+
+
+Running the utilities package
+-----------------------------
+Consult the README file in each sub-directory for further details on using
+the associated application.
+
+
+[END OF DOCUMENT]
+
