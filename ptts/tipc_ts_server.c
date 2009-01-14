@@ -44,78 +44,6 @@ int TS_BLAST_SREPS = 100000;	/* default # packets sent in blaster testing */
 static int client_in_same_cluster;
 
 /**
- * recvSocketShutdownTIPC - receives messages from a socket
- *
- * "numTimes" specifies expected number of received messages;
- * if < 0, then any number of messages is OK (quits if connection closed)
- *
- * "recvErrorTarget" specifies expected number of recv() errors; 
- * if < 0, then any number of errors is OK
- *
- * "checkErrorTarget" specifies expected number of corrupted messages;
- * if < 0, then any number of corrupted messages is OK
- *
- * Note: a recv() error also counts as a corrupted message!
- *
- */  
-
-void recvSocketShutdownTIPC 
-(
-int sockfd,		/* socket to use */
-int numTimes,	    /* the number of received messages */
-int maxSize,	    /* maximum size of the message to be received */
-int checkErrorTarget/* expected corrupted messages */
-)
-{
-	char *msgArea;		/* space for the message to be received */
-	int checkErrorCount;	/* counter for the check errors */
-	int res;		/* return code for the receive */
-	int requested;		/* total size of the data to receive */
-	int count = 0;		/* count of the received data */
-
-	if ((numTimes == 0) || (maxSize == 0))
-		return;
-
-	msgArea = (char*)malloc (maxSize);
-	if (msgArea == NULL)
-		failTest ("unable to allocate receive buffer");
-
-	checkErrorCount = 0;
-	requested = numTimes*maxSize;
-
-	do {
-		res = recv (sockfd, msgArea, maxSize, 0);
-
-		if (res == 0) {
-
-			if ((numTimes >= 0) && (count == requested)) {
-				debug ("recv() returned shutdown\n");
-				closeSocketTIPC (sockfd);
-				break;
-			} else {
-				failTest("recv() returned unexpected disconnect");
-			}
-		}
-		if (res < 0) {
-			break;
-		} else if (checkArray (msgArea, res) == 0) {
-			count += res;
-		} else {
-			checkErrorCount++;
-		}
-
-	} while (res > 0);
-
-
-
-
-	if ((checkErrorTarget >= 0) && (checkErrorCount != checkErrorTarget))
-		failTest ("unexpected number of corrupted messages received");
-
-	free (msgArea);
-}
-
-/**
  * server_receiveConnectionless - connectionless sink server
  */ 
 void server_receiveConnectionless 
@@ -333,7 +261,6 @@ int sockType	 /* socket type to use SOCK_STREAM or SOCK_SEQPACKET */
  * server_receiveConnectionShutdown - connection-oriented server
  *                  In this test we know the number of connections and the size to
  *                  expect. 
- *                  Loops until a shutdown message is received
  */
 
 void server_receiveConnectionShutdown 
@@ -361,7 +288,10 @@ int maxRequestSize   /* size of the messages to receive */
 
 	for (i = 0; i < numConns; i++) {
 		sockfd_A = acceptSocketTIPC (sockfd_L);
-		recvSocketShutdownTIPC (sockfd_A, numRequests, maxRequestSize, 0);
+		recvSocketTIPC (sockfd_A, numRequests, maxRequestSize, 0, 0);
+		if (recv (sockfd_A, (char *)&i, 1, MSG_WAITALL) != 0)
+			failTest("failed to detect disconnect by client");
+		closeSocketTIPC (sockfd_A);
 	}
 	closeSocketTIPC (sockfd_L);
 
