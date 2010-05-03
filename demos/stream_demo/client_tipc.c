@@ -6,7 +6,7 @@
  * 
  * ------------------------------------------------------------------------
  *
- * Copyright (c) 2005, Wind River Systems
+ * Copyright (c) 2005,2010 Wind River Systems
  * Copyright (c) 2003, Ericsson Research Canada
  * All rights reserved.
  * Redistribution and use in source and binary forms, with or without 
@@ -52,49 +52,57 @@
 #define BUF_SIZE 2000
 #define MSG_SIZE 80
 
-void wait_for_server(struct tipc_name* name,int wait)
+void wait_for_server(__u32 name_type, __u32 name_instance, int wait)
 {
 	struct sockaddr_tipc topsrv;
-	struct tipc_subscr subscr = {{name->type,name->instance,name->instance},
-		wait,TIPC_SUB_SERVICE,{}};
+	struct tipc_subscr subscr;
 	struct tipc_event event;
 
-	int sd = socket (AF_TIPC, SOCK_SEQPACKET,0);
+	int sd = socket(AF_TIPC, SOCK_SEQPACKET, 0);
 
-	memset(&topsrv,0,sizeof(topsrv));
+	memset(&topsrv, 0, sizeof(topsrv));
 	topsrv.family = AF_TIPC;
 	topsrv.addrtype = TIPC_ADDR_NAME;
 	topsrv.addr.name.name.type = TIPC_TOP_SRV;
 	topsrv.addr.name.name.instance = TIPC_TOP_SRV;
 
-	/* Connect to topology server: */
+	/* Connect to topology server */
 
-	if (0 > connect(sd,(struct sockaddr*)&topsrv,sizeof(topsrv))) {
-		perror("failed to connect to topology server");
+	if (0 > connect(sd, (struct sockaddr *)&topsrv, sizeof(topsrv))) {
+		perror("Client: failed to connect to topology server");
 		exit(1);
 	}
-	if (send(sd,&subscr,sizeof(subscr),0) != sizeof(subscr)) {
-		perror("failed to send subscription");
+
+	subscr.seq.type = htonl(name_type);
+	subscr.seq.lower = htonl(name_instance);
+	subscr.seq.upper = htonl(name_instance);
+	subscr.timeout = htonl(wait);
+	subscr.filter = htonl(TIPC_SUB_SERVICE);
+
+	if (send(sd, &subscr, sizeof(subscr), 0) != sizeof(subscr)) {
+		perror("Client: failed to send subscription");
 		exit(1);
 	}
-	/* Now wait for the subscription to fire: */
-	if (recv(sd,&event,sizeof(event),0) != sizeof(event)) {
-		perror("Failed to receive event");
+	/* Now wait for the subscription to fire */
+
+	if (recv(sd, &event, sizeof(event), 0) != sizeof(event)) {
+		perror("Client: failed to receive event");
 		exit(1);
 	}
-	if (event.event != TIPC_PUBLISHED) {
-		printf("Server %u,%u not published within %u [s]\n",
-		       name->type,name->instance,wait/1000);
+	if (event.event != htonl(TIPC_PUBLISHED)) {
+		printf("Client: server {%u,%u} not published within %u [s]\n",
+		       name_type, name_instance, wait/1000);
 		exit(1);
 	}
+
 	close(sd);
 }
 
 
-int main(int argc, char* argv[], char* dummy[])
+int main(int argc, char *argv[], char *dummy[])
 {
-	struct sockaddr_tipc server_addr;
 	int sd;
+	struct sockaddr_tipc server_addr;
 	char buf[BUF_SIZE];
 	int rec_num;
 	int rec_size;
@@ -102,20 +110,21 @@ int main(int argc, char* argv[], char* dummy[])
 	int sent_size;
 	int msg_size;
 
+	printf("****** TIPC stream demo client started ******\n\n");
+
+	wait_for_server(SERVER_TYPE, SERVER_INST, 10000);
+
+	sd = socket(AF_TIPC, SOCK_STREAM, 0);
+
 	server_addr.family = AF_TIPC;
 	server_addr.addrtype = TIPC_ADDR_NAME;
 	server_addr.addr.name.name.type = SERVER_TYPE;
 	server_addr.addr.name.name.instance = SERVER_INST;
 	server_addr.addr.name.domain = 0;
 
-	printf("****** TIPC stream demo client started ******\n\n");
-
-	wait_for_server(&server_addr.addr.name.name,10000);
-
-	sd = socket (AF_TIPC, SOCK_STREAM, 0);
 	if (connect(sd, (struct sockaddr *)&server_addr,
 		    sizeof(server_addr)) != 0) {
-		perror("Connect failed");
+		perror("Client: connect failed");
 		exit(1);
 	}
 

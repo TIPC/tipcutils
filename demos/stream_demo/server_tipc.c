@@ -6,7 +6,7 @@
  * 
  * ------------------------------------------------------------------------
  *
- * Copyright (c) 2005, Wind River Systems
+ * Copyright (c) 2005,2010 Wind River Systems
  * All rights reserved.
  * Redistribution and use in source and binary forms, with or without 
  * modification, are permitted provided that the following conditions are met:
@@ -61,12 +61,11 @@ int main(int argc, char *argv[], char *dummy[])
 
 	printf("****** TIPC stream demo server started ******\n\n");
 
-	listener_sd = socket (AF_TIPC, SOCK_STREAM, 0);
+	listener_sd = socket(AF_TIPC, SOCK_STREAM, 0);
 	if (listener_sd < 0) {
 		perror("Server: unable to create socket\n");
 		exit(1);
 	}
-
 
 	server_addr.family = AF_TIPC;
 	server_addr.addrtype = TIPC_ADDR_NAMESEQ;
