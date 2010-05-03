@@ -4,7 +4,7 @@ Name: inventory_sim.c
 
 Short description: TIPC distributed inventory simulation (Linux version)
 
-Copyright (c) 2004-2008 Wind River Systems, Inc.
+Copyright (c) 2004-2008,2010 Wind River Systems, Inc.
 All rights reserved.
 Redistribution and use in source and binary forms, with or without 
 modification, are permitted provided that the following conditions are met:
@@ -132,6 +132,7 @@ Examples
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <linux/tipc.h>
 
 /* defines */
@@ -270,11 +271,11 @@ void simDelay(int delay_in_msecs)
 	topsrv.addr.name.name.instance = TIPC_TOP_SRV;
 	topsrv.addr.name.domain = 0;
 
-	subscr.seq.type  = TIPC_BOGUS_SUBSCR_TYPE;
-	subscr.seq.lower = TIPC_BOGUS_SUBSCR_INST;
-	subscr.seq.upper = TIPC_BOGUS_SUBSCR_INST;
-	subscr.filter    = TIPC_SUB_SERVICE;
-	subscr.timeout   = delay_in_msecs;
+	subscr.seq.type  = htonl(TIPC_BOGUS_SUBSCR_TYPE);
+	subscr.seq.lower = htonl(TIPC_BOGUS_SUBSCR_INST);
+	subscr.seq.upper = htonl(TIPC_BOGUS_SUBSCR_INST);
+	subscr.filter    = htonl(TIPC_SUB_SERVICE);
+	subscr.timeout   = htonl(delay_in_msecs);
 
 	if (sendto(sockfd, &subscr, sizeof(subscr), 0,
 		   (struct sockaddr *)&topsrv, sizeof(topsrv)) < 0) {
@@ -287,7 +288,7 @@ void simDelay(int delay_in_msecs)
 		goto exit;
 	}
 
-	if (event.event != TIPC_SUBSCR_TIMEOUT) {
+	if (event.event != htonl(TIPC_SUBSCR_TIMEOUT)) {
 		printf("simDelay: Unexpected subscription event received\n");
 		goto exit;
 	}
@@ -329,11 +330,11 @@ int simFind(void)
 	topsrv.addr.name.name.instance = TIPC_TOP_SRV;
 	topsrv.addr.name.domain = 0;
 
-	subscr.seq.type = TIPC_INV_SIM_TYPE;
-	subscr.seq.lower = ~0;
-	subscr.seq.upper = ~0;
-	subscr.timeout = 10;	/* nominal delay */
-	subscr.filter = TIPC_SUB_SERVICE;
+	subscr.seq.type = htonl(TIPC_INV_SIM_TYPE);
+	subscr.seq.lower = htonl(~0);
+	subscr.seq.upper = htonl(~0);
+	subscr.timeout = htonl(10);	/* nominal delay */
+	subscr.filter = htonl(TIPC_SUB_SERVICE);
 
 	if (sendto(sockfd_s, &subscr, sizeof(subscr), 0,
 		   (struct sockaddr *)&topsrv, sizeof(topsrv)) < 0) {
@@ -346,7 +347,7 @@ int simFind(void)
 		goto exit;
 	}
 
-	res = (event.event == TIPC_PUBLISHED);
+	res = (event.event == htonl(TIPC_PUBLISHED));
 exit:
 	close(sockfd_s);
 
@@ -459,11 +460,11 @@ void simJanitorTask(void *arg)
 	topsrv.addr.name.name.instance = TIPC_TOP_SRV;
 	topsrv.addr.name.domain = 0;
 
-	subscr.seq.type = TIPC_INV_SIM_TYPE;
-	subscr.seq.lower = DEMO_ITEM_ID_MIN;
-	subscr.seq.upper = DEMO_ITEM_ID_MAX;
-	subscr.timeout = 10;	/* nominal delay */
-	subscr.filter = TIPC_SUB_PORTS;
+	subscr.seq.type = htonl(TIPC_INV_SIM_TYPE);
+	subscr.seq.lower = htonl(DEMO_ITEM_ID_MIN);
+	subscr.seq.upper = htonl(DEMO_ITEM_ID_MAX);
+	subscr.timeout = htonl(10);	/* nominal delay */
+	subscr.filter = htonl(TIPC_SUB_PORTS);
 
 	if (sendto(sockfd_s, &subscr, sizeof(subscr), 0,
 		   (struct sockaddr *)&topsrv, sizeof(topsrv)) < 0) {
@@ -477,11 +478,11 @@ void simJanitorTask(void *arg)
 			break;
 		}
 
-		if (event.event == TIPC_SUBSCR_TIMEOUT)
+		if (event.event == htonl(TIPC_SUBSCR_TIMEOUT))
 			break;	/* all done */
 
-		if ((event.event == TIPC_PUBLISHED) &&
-		    (event.port.node == self.addr.id.node)) {
+		if ((event.event == htonl(TIPC_PUBLISHED)) &&
+		    (event.port.node == htonl(self.addr.id.node))) {
 
 			/*
 			 * Fake a purchase request to trigger item
@@ -491,7 +492,8 @@ void simJanitorTask(void *arg)
 
 			item.family = AF_TIPC;
 			item.addrtype = TIPC_ADDR_ID;
-			item.addr.id = event.port;
+			item.addr.id.node = ntohl(event.port.node);
+			item.addr.id.ref = ntohl(event.port.ref);
 			addrlen = sizeof(item);
 
 			sockfd_c = socket(AF_TIPC, SOCK_SEQPACKET, 0);
@@ -761,11 +763,11 @@ void simLogTask(void *arg)
 
 	/* Subscribe to watch for item 0 */
 
-	subscr.seq.type  = TIPC_INV_SIM_TYPE;
-	subscr.seq.lower = 0;
-	subscr.seq.upper = 0;
-	subscr.timeout   = TIPC_WAIT_FOREVER;
-	subscr.filter    = TIPC_SUB_SERVICE;
+	subscr.seq.type  = htonl(TIPC_INV_SIM_TYPE);
+	subscr.seq.lower = htonl(0);
+	subscr.seq.upper = htonl(0);
+	subscr.timeout   = htonl(TIPC_WAIT_FOREVER);
+	subscr.filter    = htonl(TIPC_SUB_SERVICE);
 	subscr.usr_handle[0] = 0;
 
 	if (send(sockfd_w, &subscr, sizeof(subscr), 0) < 0) {
@@ -797,11 +799,11 @@ void simLogTask(void *arg)
 
 		/* Issue bogus subscription to force timeout event */
 
-		subscr.seq.type  = TIPC_BOGUS_SUBSCR_TYPE;
-		subscr.seq.lower = TIPC_BOGUS_SUBSCR_INST;
-		subscr.seq.upper = TIPC_BOGUS_SUBSCR_INST;
-		subscr.filter    = TIPC_SUB_SERVICE;
-		subscr.timeout   = SIM_STATUS_INTERVAL;
+		subscr.seq.type  = htonl(TIPC_BOGUS_SUBSCR_TYPE);
+		subscr.seq.lower = htonl(TIPC_BOGUS_SUBSCR_INST);
+		subscr.seq.upper = htonl(TIPC_BOGUS_SUBSCR_INST);
+		subscr.filter    = htonl(TIPC_SUB_SERVICE);
+		subscr.timeout   = htonl(SIM_STATUS_INTERVAL);
 		subscr.usr_handle[0]++;
 
 		if (send(sockfd_w, &subscr, sizeof(subscr), 0) < 0) {
@@ -877,9 +879,9 @@ void simLogTask(void *arg)
 			if (simState != STORE_OPEN)
 				continue;
 
-			if (event.event == TIPC_PUBLISHED)
+			if (event.event == htonl(TIPC_PUBLISHED))
 				break;
-			if ((event.event == TIPC_SUBSCR_TIMEOUT) &&
+			if ((event.event == htonl(TIPC_SUBSCR_TIMEOUT)) &&
 			    (event.s.usr_handle[0] == subscr.usr_handle[0]))
 				break;
 		}
@@ -890,7 +892,7 @@ void simLogTask(void *arg)
 
 		/* Halt as long as item 0 exists */
 
-		if (event.event == TIPC_PUBLISHED) {
+		if (event.event == htonl(TIPC_PUBLISHED)) {
 			printf ("\nSimulation halted\n");
 			while (1) {
 				res = recv(sockfd_w, &event, sizeof(event), 0);
@@ -899,7 +901,7 @@ void simLogTask(void *arg)
 					       " on item 0\n");
 					goto exit;
 				}
-				if (event.event == TIPC_WITHDRAWN) {
+				if (event.event == htonl(TIPC_WITHDRAWN)) {
 					break;
 				}
 			}
@@ -1191,11 +1193,11 @@ int simCust(int itemID, int lagTime, int waitTime, int speed, int taskID)
 
 	/* Subscribe to item name */
 
-	subscr.seq.type = TIPC_INV_SIM_TYPE;
-	subscr.seq.lower = itemID;
-	subscr.seq.upper = itemID;
-	subscr.timeout = waitTime;
-	subscr.filter = TIPC_SUB_PORTS;
+	subscr.seq.type = htonl(TIPC_INV_SIM_TYPE);
+	subscr.seq.lower = htonl(itemID);
+	subscr.seq.upper = htonl(itemID);
+	subscr.timeout = htonl(waitTime);
+	subscr.filter = htonl(TIPC_SUB_PORTS);
 
 	memset(&addr, 0, sizeof(addr));
 	addr.family = AF_TIPC;
@@ -1222,12 +1224,12 @@ int simCust(int itemID, int lagTime, int waitTime, int speed, int taskID)
 			simLog(SIM_ERROR, "%s subscription failure\n", custName);
 			break;
 		}
-		if (event.event == TIPC_SUBSCR_TIMEOUT) {
+		if (event.event == htonl(TIPC_SUBSCR_TIMEOUT)) {
 			simRes = simLog(SIM_CUST_OUT, "%d %d %d %d",
 					customerID, itemID, transactionID, waitTime);
 			break;
 		}
-		if (event.event == TIPC_WITHDRAWN) {
+		if (event.event == htonl(TIPC_WITHDRAWN)) {
 			/* ignore withdraw events */
 			continue;
 		}
@@ -1242,7 +1244,8 @@ int simCust(int itemID, int lagTime, int waitTime, int speed, int taskID)
 
 		addr.family = AF_TIPC;
 		addr.addrtype = TIPC_ADDR_ID;
-		addr.addr.id = event.port;
+		addr.addr.id.node = ntohl(event.port.node);
+		addr.addr.id.ref = ntohl(event.port.ref);
 		addrlen = sizeof(addr);
 
 		sprintf(msg, "<%d.%d.%d>[%d:%d]", zone, cluster, node,
