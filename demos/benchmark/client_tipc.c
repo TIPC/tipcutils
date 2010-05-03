@@ -7,7 +7,7 @@
  * ------------------------------------------------------------------------
  *
  * Copyright (c) 2001-2005, Ericsson Research Canada
- * Copyright (c) 2004-2006, Wind River Systems
+ * Copyright (c) 2004-2006,2010 Wind River Systems
  * All rights reserved.
  * Redistribution and use in source and binary forms, with or without 
  * modification, are permitted provided that the following conditions are met:
@@ -36,7 +36,6 @@
  * ------------------------------------------------------------------------
  */
 
-#include <assert.h>
 #include <getopt.h>
 #include <netinet/in.h>
 #include <sched.h>
@@ -73,13 +72,13 @@ struct client_cmd {
 	unsigned int client_no;
 };
 
-__u32 wait_for_server(void)
+__u32 wait_for_server(__u32 name_type, __u32 name_instance, int wait)
 {
 	struct sockaddr_tipc topsrv;
-	struct tipc_subscr subscr = 
-		{ {SERVER_NAME, 0, 0}, MAX_DELAY, TIPC_SUB_SERVICE, {} };
+	struct tipc_subscr subscr;
 	struct tipc_event event;
-	int sd;
+
+	int sd = socket(AF_TIPC, SOCK_SEQPACKET, 0);
 
 	memset(&topsrv, 0, sizeof(topsrv));
 	topsrv.family = AF_TIPC;
@@ -87,31 +86,40 @@ __u32 wait_for_server(void)
 	topsrv.addr.name.name.type = TIPC_TOP_SRV;
 	topsrv.addr.name.name.instance = TIPC_TOP_SRV;
 
-	if ((sd = socket(AF_TIPC, SOCK_SEQPACKET, 0)) < 0) {
-		perror("failed to create socket");
+	/* Connect to topology server */
+
+	if (0 > connect(sd, (struct sockaddr *)&topsrv, sizeof(topsrv))) {
+		perror("Client: failed to connect to topology server");
 		exit(1);
 	}
-	if (connect(sd, (struct sockaddr *)&topsrv, sizeof(topsrv)) < 0) {
-		perror("failed to connect to topology server");
-		exit(1);
-	}
+
+	subscr.seq.type = htonl(name_type);
+	subscr.seq.lower = htonl(name_instance);
+	subscr.seq.upper = htonl(name_instance);
+	subscr.timeout = htonl(wait);
+	subscr.filter = htonl(TIPC_SUB_SERVICE);
+
 	if (send(sd, &subscr, sizeof(subscr), 0) != sizeof(subscr)) {
-		perror("failed to send subscription");
+		perror("Client: failed to send subscription");
 		exit(1);
 	}
+	/* Now wait for the subscription to fire */
+
 	if (recv(sd, &event, sizeof(event), 0) != sizeof(event)) {
-		perror("Failed to receive event");
+		perror("Client: failed to receive event");
 		exit(1);
 	}
-	if (event.event != TIPC_PUBLISHED) {
-		printf("Server %u,%u not published within %u [s]\n",
-		       subscr.seq.type, subscr.seq.lower, MAX_DELAY/1000);
+	if (event.event != htonl(TIPC_PUBLISHED)) {
+		printf("Client: server {%u,%u} not published within %u [s]\n",
+		       name_type, name_instance, wait/1000);
 		exit(1);
 	}
+
 	close(sd);
 
-	return event.port.node;
+	return ntohl(event.port.node);
 }
+
 
 int wait_for_msg(int sd)
 {
@@ -134,9 +142,9 @@ int wait_for_msg(int sd)
 static unsigned long long elapsedmillis(struct timeval *from)
 {
 	struct timeval now;
-	int rc = gettimeofday(&now, 0);
 
-	assert(rc == 0);
+	gettimeofday(&now, 0);
+
 	if (now.tv_usec >= from->tv_usec)
 		return((now.tv_sec - from->tv_sec) * 1000 +
 		       (now.tv_usec - from->tv_usec) / 1000);
@@ -169,11 +177,13 @@ void clientmain(unsigned int client_id)
 		perror(NULL);
 		exit(1);
 	}
+
 	dest_addr.family = AF_TIPC;
 	dest_addr.addrtype = TIPC_ADDR_NAME;
 	dest_addr.scope = TIPC_NODE_SCOPE;
 	dest_addr.addr.name.name.type = CLIENT_NAME;
 	dest_addr.addr.name.name.instance = client_id;
+
 	if (bind(master_comm_sd, (struct sockaddr *)&dest_addr,
 		 sizeof(dest_addr))) {
 		printf("Client %u: Failed to bind\n", client_id);
@@ -255,7 +265,7 @@ void clientmain(unsigned int client_id)
 	client_master_addr.addr.name.domain = 0;
 
 	dprintf("Client %u: Notifying master of connection to server\n",
-	       client_id);
+		client_id);
 	server_num = ntohl(server_num);
 	if (sendto(master_comm_sd, &server_num, 4, 0,
 		   (struct sockaddr *)&client_master_addr,
@@ -371,7 +381,8 @@ static void usage(char *app)
 {
 	fprintf(stderr, "Usage:\n");
 	fprintf(stderr,
-	  "  %s [-l <lat mult>] [-t <tput mult>] [-n <num clients>]\n", app);
+		"  %s [-l <lat mult>] [-t <tput mult>] [-n <num clients>]\n",
+		app);
 	fprintf(stderr, "\tlatency test multiplier defaults to 1\n");
 	fprintf(stderr, "\tthroughput test multiplier defaults to 1\n");
 	fprintf(stderr, "\tnumber of clients defaults to %d\n", DEFAULT_CLIENTS);
@@ -436,7 +447,7 @@ int main(int argc, char *argv[], char *dummy[])
 
 	/* Wait for benchmark server to appear */
 
-	server_node = wait_for_server();
+	server_node = wait_for_server(SERVER_NAME, 0, MAX_DELAY);
 
 	/* Create socket used to communicate with child clients */
 
@@ -521,7 +532,7 @@ int main(int argc, char *argv[], char *dummy[])
 		
 		cmd.client_no = 1;
 		dest_addr.addr.name.name.instance = 1;
-		assert(!gettimeofday(&start_time, 0));
+		gettimeofday(&start_time, 0);
 
 		if (sendto(client_master_sd, &cmd, sizeof(cmd), 0,
 			   (struct sockaddr *)&dest_addr, sizeof(dest_addr))
@@ -623,7 +634,7 @@ end_latency:
 		printf("Exchanging %llu*%llu messages of size %llu octets (burst size %llu)\n",
 		       num_clients, cmd.msg_count, cmd.msg_size, cmd.burst_size);
 
-		assert(!gettimeofday(&start_time, 0));
+		gettimeofday(&start_time, 0);
 
 		for (client_id = 1; client_id <= num_clients; client_id++) {
 			cmd.client_no = client_id;
@@ -711,5 +722,4 @@ end_thruput:
 	close(client_master_sd);
 	exit(0);
 }
-
 
