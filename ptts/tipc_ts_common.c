@@ -6,7 +6,7 @@
  * 
  * ------------------------------------------------------------------------
  *
- * Copyright (c) 2006,2008 Wind River Systems
+ * Copyright (c) 2006,2008,2010 Wind River Systems
  * All rights reserved.
  * Redistribution and use in source and binary forms, with or without 
  * modification, are permitted provided that the following conditions are met:
@@ -835,17 +835,17 @@ int sigInstance				/* sync number to publish */
 	setServerAddrTo (&addr, TIPC_ADDR_NAME, TIPC_TOP_SRV, TIPC_TOP_SRV, 0);
 	connectSocketTIPC(sockfd_X, &addr);
 
-	subscr.seq.type = TS_SYNCRO_TYPE;
-	subscr.seq.lower = sigInstance;
-	subscr.seq.upper = sigInstance;
-	subscr.timeout = TIPC_WAIT_FOREVER;
-	subscr.filter = TIPC_SUB_SERVICE;
+	subscr.seq.type = htonl(TS_SYNCRO_TYPE);
+	subscr.seq.lower = htonl(sigInstance);
+	subscr.seq.upper = htonl(sigInstance);
+	subscr.timeout = htonl(TIPC_WAIT_FOREVER);
+	subscr.filter = htonl(TIPC_SUB_SERVICE);
 
 	if (send(sockfd_X, (char *)&subscr, sizeof(subscr), 0) != sizeof(subscr))
 		failTest ("Failed to send subscription");
 	if (recv(sockfd_X, (char *)&event, sizeof(event), 0) != sizeof(event))
 		failTest ("Failed to receive event");
-	if (event.event != TIPC_PUBLISHED)
+	if (event.event != htonl(TIPC_PUBLISHED))
 		failTest ("Signal %d not detected\n");
 
 	closeSocketTIPC (sockfd_X);
@@ -890,22 +890,23 @@ struct sockaddr_tipc *addr  /* pointer to address structure */
 	setServerAddrTo (&topsrv_addr, TIPC_ADDR_NAME, TIPC_TOP_SRV, TIPC_TOP_SRV, 0);
 	connectSocketTIPC(sockfd_X, &topsrv_addr);
 
-	subscr.seq.type = TS_TEST_TYPE;
-	subscr.seq.lower = TS_TEST_INST;
-	subscr.seq.upper = TS_TEST_INST;
-	subscr.timeout = TIPC_WAIT_FOREVER;
-	subscr.filter = TIPC_SUB_SERVICE;
+	subscr.seq.type = htonl(TS_TEST_TYPE);
+	subscr.seq.lower = htonl(TS_TEST_INST);
+	subscr.seq.upper = htonl(TS_TEST_INST);
+	subscr.timeout = htonl(TIPC_WAIT_FOREVER);
+	subscr.filter = htonl(TIPC_SUB_SERVICE);
 
 	if (send(sockfd_X, (char *)&subscr, sizeof(subscr), 0) != sizeof(subscr))
 		failTest ("Failed to send subscription");
 	if (recv(sockfd_X, (char *)&event, sizeof(event), 0) != sizeof(event))
 		failTest ("Failed to receive event");
-	if (event.event != TIPC_PUBLISHED)
+	if (event.event != htonl(TIPC_PUBLISHED))
 		failTest ("Signal %d not detected\n");
 
 	closeSocketTIPC (sockfd_X);
 
-	setServerAddrTo (addr, TIPC_ADDR_ID, event.port.node, event.port.ref, 0);
+	setServerAddrTo (addr, TIPC_ADDR_ID,
+			 ntohl(event.port.node), ntohl(event.port.ref), 0);
 }
 
 /**
