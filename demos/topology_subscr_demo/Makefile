@@ -12,12 +12,12 @@ CFLAGS = ${IFLAGS} ${DFLAGS} ${OFLAGS} ${EXTRAS}
 
 CC = gcc
 
-all: subscriptions server_tipc 
+all: client_tipc server_tipc 
 
 clean:
-	rm -f ./*.o subscriptions server_tipc
+	rm -f ./*.o client_tipc server_tipc
 
-subscriptions: subscriptions.o ${LOBJS}
+subscriptions: client_tipc.o ${LOBJS}
 	${CC} ${CFLAGS} $< ${LOBJS} -o $@
 
 server_tipc: server_tipc.o
