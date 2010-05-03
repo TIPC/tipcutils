@@ -2,7 +2,7 @@
 # Makefile for TIPC utilities package
 #
 
-export VERSION = 1.1.8
+export VERSION = 2.0.0
 
 SUBDIRS = tipc-config ptts demos
 
