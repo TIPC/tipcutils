@@ -1,6 +1,6 @@
 Linux TIPC Demo Programs README
        
-Last updated: 19 September 2008
+Last updated: 04 May 2010
 
 
 This directory contains a collection of demo programs that have been created
@@ -45,6 +45,11 @@ native_api
     TIPC user you can ignore these demos; if not, consult the README file
     contained in the "native_api" directory for additional information.)
 
+    [NOTE: The native API demos are a work-in-progress, and are not yet
+    integrated into the demo suite; consequently, they are not built as part
+    of the top-level "make".  The TIPC project team would be happy to receive
+    contributions from anyone who wants to complete this work.]
+
 
 Building the demos
 ------------------
@@ -53,8 +58,8 @@ If you want to build the native API demos, see the README file in the
 "native_api" directory for additional information.
 
 
-For a TIPC 1.6 environment, just do a normal build; the demo package makefiles
-should locate the necessary TIPC include files automatically.
+Just do a normal build; the demo package makefiles should locate the necessary
+TIPC include files automatically.
 
 eg. cd <top level demo directory>
     make

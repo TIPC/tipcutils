@@ -1,6 +1,6 @@
 Portable TIPC Test Suite for Linux README
        
-Last updated: 19 September 2008
+Last updated: 04 May 2010
 
 
 This directory contains the Linux edition of the portable TIPC test suite.
@@ -25,8 +25,8 @@ Makefile
 
 Building the test suite
 -----------------------
-For a TIPC 1.6 (or later) installation, just do a normal build; the test suite
-makefile should locate the necessary TIPC include files automatically.
+Just do a normal build; the test suite makefile should locate the necessary
+TIPC include files automatically.
 
 eg. cd <top level test suite directory>
     make
