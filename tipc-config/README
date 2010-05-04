@@ -1,6 +1,6 @@
 tipc-config for Linux README
        
-Last updated: 01 October 2008
+Last updated: 04 May 2010
 
 
 This directory contains the configuration tool used with Linux TIPC.
@@ -8,8 +8,8 @@ This directory contains the configuration tool used with Linux TIPC.
 
 Building the tool
 -----------------
-For a TIPC 1.6 (or later) installation, just do a normal build; the tool's
-makefile should locate the necessary TIPC include files automatically.
+Do a normal build; the tool's makefile should locate the necessary TIPC
+include files automatically.
 
 eg. cd <tipc-config directory>
     make
@@ -36,8 +36,11 @@ Additional rules:
 
 Running the tool
 ----------------
-Details of the commands provided by tipc-config can be found in the TIPC 1.7
-User's Guide (http://tipc.sourceforge.net/doc/tipc_1.7_users_guide.html).
+Enter "tipc-config -help" to obtain a list of the commands supported by the
+configuration tool.
+
+More information about these commands can be found in the TIPC User's Guide
+(http://tipc.sourceforge.net/documentation.html).
 
 
 [END OF DOCUMENT]

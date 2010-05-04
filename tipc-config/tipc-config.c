@@ -3,7 +3,7 @@
  * 
  * Copyright (c) 2004-2005, Ericsson Research Canada
  * Copyright (c) 2004-2006, Ericsson AB
- * Copyright (c) 2005-2008, Wind River Systems
+ * Copyright (c) 2005-2008,2010, Wind River Systems
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -726,16 +726,6 @@ static void set_max_nodes(char *args)
 				"max nodes", "");
 }
 
-static void set_max_remotes(char *args)
-{
-	if (!*args)
-		printf("maximum allowed remote nodes%s: %u\n", for_dest(),
-		       do_get_unsigned(TIPC_CMD_GET_MAX_REMOTES));
-	else
-		do_set_unsigned(args, TIPC_CMD_SET_MAX_REMOTES,
-				"max remote nodes", "");
-}
-
 static void set_netid(char *args)
 {
 	if (!*args)
@@ -774,42 +764,6 @@ static void get_nodes(char *args)
 		node_info = (struct tipc_node_info *)TLV_LIST_DATA(&tlv_list);
 		printf("%s: %s\n", addr2str(ntohl(node_info->addr)),
 		       ntohl(node_info->up) ? "up" : "down");
-		TLV_LIST_STEP(&tlv_list);
-	}
-}
-
-static void get_routes(char *args)
-{
-	int tlv_space;
-	__u32 domain;
-	__u32 domain_net;
-	struct tlv_list_desc tlv_list;
-	struct tipc_route_info *route_info;
-
-	domain = (*args != 0) ? str2addr(args) : 0;
-	domain_net = htonl(domain);
-	tlv_space = TLV_SET(tlv_area, TIPC_TLV_NET_ADDR,
-			    &domain_net, sizeof(domain_net));
-	tlv_space = do_command(TIPC_CMD_GET_ROUTES, tlv_area, tlv_space,
-			       tlv_area, sizeof(tlv_area));
-
-	print_title_opt("Routes%s:\n", for_domain(" to ", domain));
-	if (tlv_space == 0) {
-		printf("No routes found\n");
-		return;
-	}
-
-	printf("Region          Local router    Remote router\n");
-
-	TLV_LIST_INIT(&tlv_list, tlv_area, tlv_space);
-	while (!TLV_LIST_EMPTY(&tlv_list)) {
-		if (!TLV_LIST_CHECK(&tlv_list, TIPC_TLV_ROUTE_INFO))
-			fatal("corrupted reply message\n");
-		route_info = (struct tipc_route_info *)TLV_LIST_DATA(&tlv_list);
-		printf("%-15s %-15s %-15s\n", 
-		       addr2str(ntohl(route_info->remote_addr)),
-		       addr2str(ntohl(route_info->local_router)),
-		       addr2str(ntohl(route_info->remote_router)));
 		TLV_LIST_STEP(&tlv_list);
 	}
 }
@@ -934,40 +888,6 @@ static void reset_linkset_stats(char *args)
 	else
 		reset_link_stats(args);
 }
-
-
-#if 0
-static void create_link(char *args)
-{
-	char create_link_cmd[TIPC_MAX_BEARER_NAME + TIPC_MAX_MEDIA_ADDR + TIPC_MAX_ADDR + 1];
-	int tlv_space;
-
-	strncpy(create_link_cmd, args, TIPC_MAX_BEARER_NAME +  TIPC_MAX_ADDR + TIPC_MAX_MEDIA_ADDR);
-	create_link_cmd[TIPC_MAX_BEARER_NAME + TIPC_MAX_MEDIA_ADDR] = '\0';
-
-	tlv_space = TLV_SET(tlv_area, TIPC_TLV_CREATE_LINK, 
-			    create_link_cmd, sizeof(create_link_cmd));
-	tlv_space = do_command(TIPC_CMD_CREATE_LINK, tlv_area, tlv_space,
-			       tlv_area, sizeof(tlv_area));
-	cprintf("Created new link \n");
-
-}
-
-static void delete_link(char *args)
-{
-	char link_name[TIPC_MAX_LINK_NAME];
-	int tlv_space;
-
-	strncpy(link_name, args, TIPC_MAX_LINK_NAME - 1);
-	link_name[TIPC_MAX_LINK_NAME - 1] = '\0';
-	tlv_space = TLV_SET(tlv_area, TIPC_TLV_LINK_NAME, 
-			    link_name, sizeof(link_name));
-	tlv_space = do_command(TIPC_CMD_DELETE_LINK, tlv_area, tlv_space,
-			       tlv_area, sizeof(tlv_area));
-
-	cprintf("Deleted link %s\n", link_name);
-}
-#endif
 
 static void show_name_table(char *args)
 {
@@ -1129,49 +1049,6 @@ static void show_ports(char *dummy)
 	printf("%s", (char *)TLV_DATA(tlv_area));
 }
 
-#if 0
-static void show_port_stats(char *args)
-{
-	__u32 port_ref;
-	__u32 port_ref_net;
-	char dummy;
-	int tlv_space;
-
-	if (sscanf(args, "%u%c", &port_ref, &dummy) != 1)
-		fatal("invalid port reference\n");
-
-	port_ref_net = htonl(port_ref);
-	tlv_space = TLV_SET(tlv_area, TIPC_TLV_PORT_REF, 
-			    &port_ref_net, sizeof(port_ref_net));
-	tlv_space = do_command(TIPC_CMD_SHOW_PORT_STATS, tlv_area, tlv_space,
-			       tlv_area, sizeof(tlv_area));
-
-	if (!TLV_CHECK(tlv_area, tlv_space, TIPC_TLV_ULTRA_STRING))
-		fatal("corrupted reply message\n");
-
-	printf("%s", (char *)TLV_DATA(tlv_area));
-}
-
-static void reset_port_stats(char *args)
-{
-	__u32 port_ref;
-	__u32 port_ref_net;
-	char dummy;
-	int tlv_space;
-
-	if (sscanf(args, "%u%c", &port_ref, &dummy) != 1)
-		fatal("invalid port reference\n");
-
-	port_ref_net = htonl(port_ref);
-	tlv_space = TLV_SET(tlv_area, TIPC_TLV_PORT_REF, 
-			    &port_ref_net, sizeof(port_ref_net));
-	tlv_space = do_command(TIPC_CMD_RESET_PORT_STATS, tlv_area, tlv_space,
-			       tlv_area, sizeof(tlv_area));
-
-	cprintf("Port %u statistics reset\n", port_ref);
-}
-#endif
-
 static void set_log_size(char *args)
 {
 	int tlv_space;
@@ -1189,6 +1066,8 @@ static void set_log_size(char *args)
 				" (this will discard current log contents)");
 	}
 }
+
+#if 0
 
 static void show_stats(char *args)
 {
@@ -1213,6 +1092,8 @@ static void show_stats(char *args)
 	print_title_opt("Status%s:\n", "");
 	printf("%s", (char *)TLV_DATA(tlv_area));
 }
+
+#endif
 
 static void set_link_value(char *linkName, __u32 dummy, const char *vname,
 			   int cmd, int val)
@@ -1303,7 +1184,7 @@ static void enable_bearer(char *args)
 			a, for_dest(), addr2str(domain), pri);
 
 		req_tlv.priority = htonl(pri);
-		req_tlv.disc_domain = htonl(domain);
+		req_tlv.detect_scope = htonl(domain);
 		strncpy(req_tlv.name, a, TIPC_MAX_BEARER_NAME - 1);
 		req_tlv.name[TIPC_MAX_BEARER_NAME - 1] = '\0';
 
@@ -1344,325 +1225,6 @@ static void disable_bearerset(char *args)
 		}
 	}
 }
-
-
-#if 0
-
-/* PROTOTYPE CODE FOR COMMANDS THAT AREN'T YET SUPPORTED */
-
-const char *media_addr_string2(struct tipc_media_addr *a)
-{
-	static char addr_area[128];
-	uint addr_type = unpack_msg(a->type);
-	unsigned char *addr = (unsigned char *) & a->dev_addr;
-	uint i, len;
-
-	switch (addr_type) {
-	case ETH_ADDR:
-		{
-			sprintf(addr_area,
-				"ETH(%02x:%02x:%02x:%02x:%02x:%02x) ",
-				addr[0], addr[1], addr[2], addr[3],
-				addr[4], addr[5]);
-			break;
-		}
-	case SOCKADDR_IPV4:
-		{
-			addr = (unsigned char *)&a->dev_addr.addr_in.sin_addr.s_addr;
-			sprintf(addr_area, "SOCK_ADDR_IPV4(%u.%u.%u.%u:",
-				addr[0], addr[1], addr[2], addr[3]);
-			len = strlen(addr_area);
-			sprintf(&addr_area[len], "%u)",
-				a->dev_addr.addr_in.sin_port);
-			break;
-		}
-	case SOCK_DESCR:
-		{
-			sprintf(addr_area, "SOCK_DESCR(%u)",
-				ntohs(a->dev_addr.sock_descr));
-			break;
-		}
-	default:
-		{
-			sprintf(addr_area, "UNKNOWN(%u):", addr_type);
-			for (i = 0; i < (sizeof(*a) - sizeof(int)); i++) {
-				sprintf(&addr_area[2 * i], "%02x ", addr[i]);
-			}
-		}
-	}
-	return addr_area;
-}
-
-static void get_peer_address(char *args)
-{
-	static struct tipc_cmd_result_msg *res_msg;
-	static char addr_area[128];
-	char link_name[TIPC_MAX_LINK_NAME];
-	int i;
-
-	if (*args) {
-		strncpy(link_name, args, TIPC_MAX_LINK_NAME - 1);
-		link_name[TIPC_MAX_LINK_NAME-1] = '\0';
-	} else
-		fatal(usage);
-	res_msg = do_safe_operation(TIPC_GET_PEER_ADDRESS,
-				    link_name, sizeof(link_name));
-	if (res_msg) {
-		printf("Peer Address of link <%s> is:\n", args);
-		printf("   %s\n",
-		       media_addr_string2(&res_msg->result.peer_address));
-		free(res_msg);
-	} else {
-		printf("Error getting peer address");
-	}
-}
-
-static void link_block(char *args)
-{
-	static struct tipc_cmd_result_msg *res_msg;
-	char link_name[TIPC_MAX_LINK_NAME];
-
-	strncpy(link_name, args, TIPC_MAX_LINK_NAME - 1);
-	link_name[TIPC_MAX_LINK_NAME - 1] = '\0';
-	confirm("Block link <%s> ? [Y/n]\n", link_name);
-	res_msg = do_unsafe_operation(TIPC_CMD_BLOCK_LINK, link_name, sizeof(link_name));
-	if (res_msg) {
-		free(res_msg);
-		cprintf("Link <%s> blocked\n", link_name);
-	} else {
-		printf("Error blocking link\n");
-	}
-}
-
-static void link_unblock(char *args)
-{
-	static struct tipc_cmd_result_msg *res_msg;
-	char link_name[TIPC_MAX_LINK_NAME];
-
-	strncpy(link_name, args, TIPC_MAX_LINK_NAME - 1);
-	link_name[TIPC_MAX_LINK_NAME - 1] = '\0';
-	confirm("Unblock link <%s> ? [Y/n]\n", link_name);
-	res_msg = do_unsafe_operation(TIPC_CMD_UNBLOCK_LINK, link_name, sizeof(link_name));
-	if (res_msg) {
-		free(res_msg);
-		cprintf("Link <%s> unblocked\n", link_name);
-	} else {
-		printf("Error unblocking link\n");
-	}
-}
-
-	#define MASTER_NAME 2
-	#define DIE 345644567
-	#define MAX_NODES 512
-
-static __u32 me = 0;
-
-static __u32 zone_master_node(void)
-{
-	struct tipc_subscr master_subscr = { {MASTER_NAME, 0, 0}, 0, 0,};
-	struct tipc_event master_event;
-	int topsd;
-	struct sockaddr_tipc topsrv;
-
-	memset(&topsrv, 0, sizeof(topsrv));
-	topsrv.addrtype = TIPC_ADDR_NAME;
-	topsrv.addr.name.name.type = TIPC_TOP_SRV;
-	topsrv.addr.name.name.instance = TIPC_TOP_SRV;
-
-	topsd = socket(AF_TIPC, SOCK_SEQPACKET, 0);
-	if (topsd < 0) {
-		perror("failed to create socket");
-		exit(1);
-	}
-	if (connect(topsd, (struct sockaddr *) &topsrv, sizeof(topsrv)) < 0) {
-		perror("failed to connect to topology server");
-		close(topsd);
-		exit(1);
-	}
-	if (send(topsd, &master_subscr, sizeof(master_subscr), 0) !=
-	    sizeof(master_subscr)) {
-		perror("failed to send master subscription");
-		close(topsd);
-		exit(1);
-	}
-	if (recv(topsd, &master_event, sizeof(master_event), 0) !=
-	    sizeof(master_event)) {
-		perror("failed to receive master subscription event");
-		close(topsd);
-		exit(1);
-	}
-	close(topsd);
-	if (master_event.event != TIPC_PUBLISHED)
-		return 0;
-	return master_event.port.node;
-}
-
-static void get_zone_master(char *optarg)
-{
-	__u32 m = zone_master_node();
-	if (m)
-		printf("Zone Master is on %s\n", addr(m));
-	else
-		printf("No Zone Master Running\n");
-}
-
-static void start_zone_master(char *optarg)
-{
-	__u32 m = zone_master_node();
-	if (m)
-		fatal("Failed, Zone Master already on node %s\n",
-		    addr(m));
-	if (!fork()) {
-		struct sockaddr_tipc maddr;
-		int sd = socket(AF_TIPC, SOCK_RDM, 0);
-		if (sd < 0)
-			fatal("Failed to create zone master socket\n");
-		maddr.family = AF_TIPC;
-		maddr.addrtype = TIPC_ADDR_NAMESEQ;
-		maddr.addr.nameseq.type = MASTER_NAME;
-		maddr.addr.nameseq.lower = 0;
-		maddr.addr.nameseq.upper = ~0;
-		maddr.scope = TIPC_ZONE_SCOPE;
-		if (bind(sd, (struct sockaddr *) &maddr, sizeof(maddr)))
-			fatal("Failed to bind to zone master name\n");
-		zone_master_main(sd);
-	}
-	exit(EXIT_SUCCESS);
-}
-
-static void kill_zone_master(char *optarg)
-{
-	static struct tipc_cmd_result_msg *res_msg;
-	if (zone_master_node() == me) {
-		res_msg = do_operation_tipc(MASTER_NAME, me, DIE, me, 0, 0);
-		free(res_msg);
-	} else
-		fatal("Must be Zone Master to do this\n");
-}
-
-static void zone_master_main(int msd)
-{
-	struct tipc_cmd_msg cmd_msg;
-	static struct tipc_cmd_result_msg *res_msg;
-	struct tipc_subscr net_subscr = { {0, 0, -1}, -1, 0, 0,};
-	struct tipc_event net_event;
-	int topsd;
-	struct sockaddr_tipc topsrv;
-	struct pollfd pfd[2];
-	int i;
-	struct tipc_cmd_result_msg *rmsg =
-	(struct tipc_cmd_result_msg *) malloc(TIPC_MAX_USER_MSG_SIZE);
-	struct {
-		int sd;
-		__u32 addr;
-	} nodes[MAX_NODES];
-
-	memset(&nodes, 0, sizeof(nodes));
-
-	/*
-	 * Establish  connection to topology server and subscribe for
-	 * network events
-	 */
-	memset(&topsrv, 0, sizeof(topsrv));
-	topsrv.addrtype = TIPC_ADDR_NAME;
-	topsrv.addr.name.name.type = TIPC_TOP_SRV;
-	topsrv.addr.name.name.instance = TIPC_TOP_SRV;
-
-	topsd = socket(AF_TIPC, SOCK_SEQPACKET, 0);
-	if (topsd < 0) {
-		perror("failed to create socket");
-		exit(EXIT_FAILURE);
-	}
-	if (connect(topsd, (struct sockaddr *) &topsrv, sizeof(topsrv)) < 0) {
-		perror("failed to connect to topology server");
-		exit(EXIT_FAILURE);
-	}
-	if (send(topsd, &net_subscr, sizeof(net_subscr), 0) !=
-	    sizeof(net_subscr)) {
-		perror("failed to send master subscription");
-		exit(EXIT_FAILURE);
-	}
-	pfd[0].fd = topsd;
-	pfd[0].events = 0xffff & ~POLLOUT;
-
-	cprintf("Zone Master daemeon started\n");
-
-	pfd[1].fd = msd;
-	pfd[1].events = 0xffff & ~POLLOUT;
-
-	while (poll(pfd, 2, -1) > 0) {
-		if (pfd[0].revents & POLLIN) {
-			if (recv(topsd, &net_event, sizeof(net_event), 0)
-			    != sizeof(net_event)) {
-				perror
-				("failed to receive network subscription event");
-				exit(EXIT_FAILURE);
-			}
-			if (net_event.event == TIPC_PUBLISHED) {
-				for (i = 0; nodes[i].sd; i++);
-				nodes[i].addr = net_event.found_lower;
-				nodes[i].sd =
-				socket(AF_TIPC, SOCK_SEQPACKET, 0);
-				if (nodes[i].sd < 0)
-					err(1,
-					    "Failed to create socket \n");
-				res_msg = do_operation_tipc(0, nodes[i].addr,
-							    TIPC_ESTABLISH, nodes[i].addr,
-							    nodes[i].sd, 0, 0);
-				free(res_msg);
-				cprintf("Zone Master connected to %s\n",
-					addr(nodes[i].addr));
-			}
-		}
-		if (pfd[1].revents & POLLIN) {
-			struct sockaddr_tipc tipc_orig, tipc_dest;
-			socklen_t origlen = sizeof(tipc_orig);
-			int sz =
-			recvfrom(msd, &cmd_msg, sizeof(cmd_msg), 0,
-				 (struct sockaddr *) &tipc_orig, &origlen);
-
-			if (tipc_orig.addr.id.node != me)
-				continue;
-
-			/****
-			 * MUST BE REPLACED BY SOMETHING ELSE
-			 *
-			ioctl(msd,TIPC_GET_DEST_ADDR,&tipc_dest);
-			*/
-			if ((pfd[1].revents & POLLERR) == 0) {
-				uint dnode = 0x1001001;	//tipc_dest.addr.name.name.instance;
-				uint rsz = sizeof(*rmsg);
-				rmsg->retval = -EINVAL;
-				if (unpack_msg(cmd_msg.cmd) == DIE) {
-					rmsg->retval = TIPC_OK;
-					sendto(msd, rmsg, sizeof(*rmsg), 0,
-					       (struct sockaddr *) &tipc_orig,
-					       sizeof(tipc_orig));
-					cprintf
-					("Zone Master terminating...\n");
-					exit(EXIT_SUCCESS);
-				}
-				for (i = 0;
-				    (nodes[i].addr != dnode)
-				    && (i < MAX_NODES); i++);
-				if (i < MAX_NODES) {
-					if ((send(nodes[i].sd, &cmd_msg,
-						  sizeof(cmd_msg), 0) <= 0)
-					    || ((rsz = recv(nodes[i].sd, rmsg,
-							    TIPC_MAX_USER_MSG_SIZE,
-							    0)) <= 0)) {
-						close(nodes[i].sd);
-						nodes[i].sd = nodes[i].addr = 0;
-					}
-				}
-				sendto(msd, rmsg, rsz, 0,
-				       (struct sockaddr *) &tipc_orig, sizeof(tipc_orig));
-			}
-		}
-	}
-}
-
-#endif
 
 
 /******************************************************************************
@@ -1713,7 +1275,6 @@ static char usage[] =
 "  -max_nodes    [=<value>]                   Get/set max nodes in own cluster\n"
 "  -max_ports    [=<value>]                   Get/set max number of ports\n"
 "  -max_publ     [=<value>]                   Get/set max publications\n"
-"  -max_remotes  [=<value>]                   Get/set max non-cluster neighbors\n"
 "  -max_subscr   [=<value>]                   Get/set max subscriptions\n"
 "  -max_zones    [=<value>]                   Get/set max zones in own network\n"
 "  -mng  [=enable|disable]                    Get/set remote management\n"
@@ -1722,8 +1283,6 @@ static char usage[] =
 "  -nt   [=[<depth>,]<type>[,<low>[,<up>]]]   Get name table\n"
 "        where <depth> = types|names|ports|all\n"
 "  -p                                         Get port info\n"
-"  -r    [=<domain>]                          Get routes to domain\n"
-"  -s                                         Get TIPC status info\n"
 "  -v                                         Verbose output\n"
 "  -V                                         Get tipc-config version info\n"
 #if 0
@@ -1734,9 +1293,12 @@ static char usage[] =
 "                   <et:he:ra:dd:re:ss>       Create link\n"
 "  -ld    =<bearer>,<addr> | <linkpat>        Delete link \n"
 "  -lu    =<linkpat>                          Unblock link\n"
+"  -max_remotes  [=<value>]                   Get/set max non-cluster neighbors\n"
 "  -p    [=all|bound|connected|<port>]        Get port info\n"
 "  -ps    =<port>                             Get port statistics\n"
 "  -psr   =<port>                             Reset port statistics\n"
+"  -r    [=<domain>]                          Get routes to domain\n"
+"  -s                                         Get TIPC status info\n"
 "  -zm                                        Get zone master\n"
 "        [=enable|disable ]                   Assume/relinquish zone\n"
 #endif
@@ -1768,41 +1330,38 @@ static struct option options[] = {
 	{"mng",          2, 0, OPT_BASE + 2},
 	{"nt",           2, 0, OPT_BASE + 3},
 	{"p",            0, 0, OPT_BASE + 4},
+	{"m",            0, 0, OPT_BASE + 5},
+	{"b",            2, 0, OPT_BASE + 6},
+	{"be",           1, 0, OPT_BASE + 7},
+	{"bd",           1, 0, OPT_BASE + 8},
+	{"n",            2, 0, OPT_BASE + 9},
+	{"l",            2, 0, OPT_BASE + 10},
+	{"ls",           2, 0, OPT_BASE + 11},
+	{"lsr",          1, 0, OPT_BASE + 12},
+	{"lp",           1, 0, OPT_BASE + 13},
+	{"lw",           1, 0, OPT_BASE + 14},
+	{"lt",           1, 0, OPT_BASE + 15},
+	{"max_ports",    2, 0, OPT_BASE + 16},
+	{"max_subscr",   2, 0, OPT_BASE + 17},
+	{"max_publ",     2, 0, OPT_BASE + 18},
+	{"max_zones",    2, 0, OPT_BASE + 19},
+	{"max_clusters", 2, 0, OPT_BASE + 20},
+	{"max_nodes",    2, 0, OPT_BASE + 21},
+	{"log",          2, 0, OPT_BASE + 22},
 #if 0
-	{"ps",           1, 0, OPT_BASE + 5},
-	{"psr",          1, 0, OPT_BASE + 6},
+/* commands proposed, but not yet implemented */
+	{"la",           2, 0, OPT_BASE + },
+	{"lc",           2, 0, OPT_BASE + },
+	{"ld",           2, 0, OPT_BASE + },
+	{"lb",           2, 0, OPT_BASE + },
+	{"lu",           2, 0, OPT_BASE + },
+	{"max_remotes",  2, 0, OPT_BASE + },
+	{"ps",           1, 0, OPT_BASE + },
+	{"psr",          1, 0, OPT_BASE + },
+	{"r",            2, 0, OPT_BASE + },
+	{"s",            0, 0, OPT_BASE + },
+	{"zm",           2, 0, OPT_BASE + },
 #endif
-	{"m",            0, 0, OPT_BASE + 7},
-	{"b",            2, 0, OPT_BASE + 8},
-	{"be",           1, 0, OPT_BASE + 9},
-	{"bd",           1, 0, OPT_BASE + 10},
-	{"n",            2, 0, OPT_BASE + 11},
-	{"r",            2, 0, OPT_BASE + 12},
-	{"l",            2, 0, OPT_BASE + 13},
-	{"ls",           2, 0, OPT_BASE + 14},
-	{"lsr",          1, 0, OPT_BASE + 15},
-#if 0
-	{"lc",           2, 0, OPT_BASE + 16},
-	{"ld",           2, 0, OPT_BASE + 17},
-	{"lb",           2, 0, OPT_BASE + 18},
-	{"lu",           2, 0, OPT_BASE + 19},
-#endif
-	{"lp",           1, 0, OPT_BASE + 20},
-	{"lw",           1, 0, OPT_BASE + 21},
-	{"lt",           1, 0, OPT_BASE + 22},
-#if 0
-	{"la",           2, 0, OPT_BASE + 23},
-	{"zm",           2, 0, OPT_BASE + 24},
-#endif
-	{"max_ports",    2, 0, OPT_BASE + 25},
-	{"max_subscr",   2, 0, OPT_BASE + 26},
-	{"max_publ",     2, 0, OPT_BASE + 27},
-	{"max_zones",    2, 0, OPT_BASE + 28},
-	{"max_clusters", 2, 0, OPT_BASE + 29},
-	{"max_nodes",    2, 0, OPT_BASE + 30},
-	{"max_remotes",  2, 0, OPT_BASE + 31},
-	{"log",          2, 0, OPT_BASE + 32},
-	{"s",            0, 0, OPT_BASE + 33},
 	{0, 0, 0, 0}
 };
 
@@ -1812,35 +1371,24 @@ void (*cmd_array[])(char *args) = {
 	set_remote_mng,
 	show_name_table,
 	show_ports,
-	NULL, /* show_port_stats, */
-	NULL, /* reset_port_stats, */
 	get_media,
 	get_bearerset,
 	enable_bearer,
 	disable_bearerset,
 	get_nodes,
-	get_routes,
 	get_linkset,
 	show_linkset_stats,
 	reset_linkset_stats,
-	NULL, /* create_link */
-	NULL, /* delete_link */
-	NULL, /* link_block */
-	NULL, /* link_unblock */
 	set_linkset_priority,
 	set_linkset_window,
 	set_linkset_tolerance,
-	NULL, /* get_peer_address */
-	NULL, /* zone master */
 	set_max_ports,
 	set_max_subscr,
 	set_max_publ,
 	set_max_zones,
 	set_max_clusters,
 	set_max_nodes,
-	set_max_remotes,
 	set_log_size,
-	show_stats,
 	NULL
 };
 
