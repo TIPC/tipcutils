@@ -1067,8 +1067,6 @@ static void set_log_size(char *args)
 	}
 }
 
-#if 0
-
 static void show_stats(char *args)
 {
 	__u32 attr_val_net;
@@ -1092,8 +1090,6 @@ static void show_stats(char *args)
 	print_title_opt("Status%s:\n", "");
 	printf("%s", (char *)TLV_DATA(tlv_area));
 }
-
-#endif
 
 static void set_link_value(char *linkName, __u32 dummy, const char *vname,
 			   int cmd, int val)
@@ -1283,6 +1279,7 @@ static char usage[] =
 "  -nt   [=[<depth>,]<type>[,<low>[,<up>]]]   Get name table\n"
 "        where <depth> = types|names|ports|all\n"
 "  -p                                         Get port info\n"
+"  -s                                         Get TIPC status info\n"
 "  -v                                         Verbose output\n"
 "  -V                                         Get tipc-config version info\n"
 #if 0
@@ -1298,7 +1295,6 @@ static char usage[] =
 "  -ps    =<port>                             Get port statistics\n"
 "  -psr   =<port>                             Reset port statistics\n"
 "  -r    [=<domain>]                          Get routes to domain\n"
-"  -s                                         Get TIPC status info\n"
 "  -zm                                        Get zone master\n"
 "        [=enable|disable ]                   Assume/relinquish zone\n"
 #endif
@@ -1348,6 +1344,7 @@ static struct option options[] = {
 	{"max_clusters", 2, 0, OPT_BASE + 20},
 	{"max_nodes",    2, 0, OPT_BASE + 21},
 	{"log",          2, 0, OPT_BASE + 22},
+	{"s",            0, 0, OPT_BASE + 23},
 #if 0
 /* commands proposed, but not yet implemented */
 	{"la",           2, 0, OPT_BASE + },
@@ -1359,7 +1356,6 @@ static struct option options[] = {
 	{"ps",           1, 0, OPT_BASE + },
 	{"psr",          1, 0, OPT_BASE + },
 	{"r",            2, 0, OPT_BASE + },
-	{"s",            0, 0, OPT_BASE + },
 	{"zm",           2, 0, OPT_BASE + },
 #endif
 	{0, 0, 0, 0}
@@ -1389,6 +1385,7 @@ void (*cmd_array[])(char *args) = {
 	set_max_clusters,
 	set_max_nodes,
 	set_log_size,
+	show_stats,
 	NULL
 };
 
