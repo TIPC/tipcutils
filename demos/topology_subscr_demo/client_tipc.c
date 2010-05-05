@@ -141,7 +141,7 @@ int main(int argc, char *argv[], char *dummy[])
 	}
 	print_sub("Client: issued subscription to", &subscr);
 
-	printf("\Client: subscriptions remain active until client is killed\n");
+	printf("Client: subscriptions remain active until client is killed\n");
 
 	/* Now wait for the subscriptions to fire */
 
