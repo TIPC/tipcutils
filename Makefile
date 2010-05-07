@@ -14,7 +14,7 @@ $(SUBDIRS):
 	$(MAKE) -C $@
 
 dist: clean
-	git tar-tree HEAD tipcutils-$(VERSION) | gzip - > ../tipcutils-$(VERSION).tar.gz
+	git archive --format=tar --prefix=tipcutils-$(VERSION)/ HEAD | gzip - > ../tipcutils-$(VERSION).tar.gz
 
 clean:
 	for dir in $(SUBDIRS); do \
