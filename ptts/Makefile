@@ -25,4 +25,6 @@ tipcTS: tipc_ts_server_linux.o ${LOBJS}
 clean:
 	${RM} ./*.o tipcTC tipcTS
 
+tipc_ts_client_linux.o: tipc_ts_client_linux.c tipc_ts_client.c tipc_ts_common.c tipc_ts.h tipc_ts_adapt.h
+tipc_ts_server_linux.o: tipc_ts_server_linux.c tipc_ts_server.c tipc_ts_common.c tipc_ts.h tipc_ts_adapt.h
 
