@@ -798,17 +798,17 @@ void sendSyncTIPC
 int sigInstance		  /* sync number to publish */
 )
 {
-	int sockfd_X;             /* socket to use */
-	struct sockaddr_tipc addr;/* address to use */
+	int sockfd_R;               /* socket used for signal acknowledement */
+	struct sockaddr_tipc addr;  /* address to use */
 
 	debug ("sending synchronization signal %d\n", sigInstance);
 	setServerAddrTo (&addr, TIPC_ADDR_NAME, TS_SYNCRO_TYPE, sigInstance, 0);
-	sockfd_X = createSocketTIPC (SOCK_RDM);
-	bindSocketTIPC (sockfd_X, &addr);
+	sockfd_R = createSocketTIPC (SOCK_RDM);
+	bindSocketTIPC (sockfd_R, &addr);
 	debug ("sent synchronization signal %d\n", sigInstance);
-	if (recv (sockfd_X, (char *)&addr, 1, 0) != 1)
+	if (recv (sockfd_R, (char *)&addr, 1, 0) != 1)
 		failTest ("synchronization signal not acknowledged");
-	closeSocketTIPC (sockfd_X);
+	closeSocketTIPC (sockfd_R);
 	debug ("got ack for synchronization signal %d \n", sigInstance);
 }
 
@@ -821,19 +821,20 @@ void recvSyncTIPC
 int sigInstance				/* sync number to publish */
 )
 {
-	int sockfd_X;               /* socket */
+	int sockfd_S;               /* socket used for signal detection */
+	int sockfd_R;               /* socket used for signal acknowledement */
 	struct sockaddr_tipc addr;  /* address to use */
 	struct tipc_subscr subscr;  /* subscription structure to fill in */
 	struct tipc_event event;    /* tipc event structure */
 
 	/* Wait for occurrence of synchronization signal */
 
-	debug ("waiting for synchronization signal %d\n", sigInstance);
+	debug ("detecting synchronization signal %d\n", sigInstance);
 
-	sockfd_X = createSocketTIPC (SOCK_SEQPACKET);
+	sockfd_S = createSocketTIPC (SOCK_SEQPACKET);
 
 	setServerAddrTo (&addr, TIPC_ADDR_NAME, TIPC_TOP_SRV, TIPC_TOP_SRV, 0);
-	connectSocketTIPC(sockfd_X, &addr);
+	connectSocketTIPC(sockfd_S, &addr);
 
 	subscr.seq.type = htonl(TS_SYNCRO_TYPE);
 	subscr.seq.lower = htonl(sigInstance);
@@ -841,32 +842,41 @@ int sigInstance				/* sync number to publish */
 	subscr.timeout = htonl(TIPC_WAIT_FOREVER);
 	subscr.filter = htonl(TIPC_SUB_SERVICE);
 
-	if (send(sockfd_X, (char *)&subscr, sizeof(subscr), 0) != sizeof(subscr))
+	if (send(sockfd_S, (char *)&subscr, sizeof(subscr), 0) != sizeof(subscr))
 		failTest ("Failed to send subscription");
-	if (recv(sockfd_X, (char *)&event, sizeof(event), 0) != sizeof(event))
+	if (recv(sockfd_S, (char *)&event, sizeof(event), 0) != sizeof(event))
 		failTest ("Failed to receive event");
 	if (event.event != htonl(TIPC_PUBLISHED))
 		failTest ("Signal %d not detected\n");
-
-	closeSocketTIPC (sockfd_X);
 
 	/* Acknowledge receipt of synchronization signal */
 
 	debug ("acknowledging synchronization signal %d\n", sigInstance);
 
-	sockfd_X = createSocketTIPC (SOCK_RDM);
+	sockfd_R = createSocketTIPC (SOCK_RDM);
 
 	/* synchronization messages mustn't be discarded when congested */
-	setOption(sockfd_X, TIPC_IMPORTANCE, TIPC_CRITICAL_IMPORTANCE);
+	setOption(sockfd_R, TIPC_IMPORTANCE, TIPC_CRITICAL_IMPORTANCE);
 
 	setServerAddrTo (&addr, TIPC_ADDR_NAME, TS_SYNCRO_TYPE, sigInstance, 0);
-	if (sendto (sockfd_X, (caddr_t)&subscr, 1, 0,
+	if (sendto (sockfd_R, (caddr_t)&subscr, 1, 0,
 			(struct sockaddr *)&addr, sizeof (addr)) != 1)
 		failTest ("can't acknowledge synchronization signal");
 
-	closeSocketTIPC (sockfd_X);
+	closeSocketTIPC (sockfd_R);
 
-	debug ("acknowledged synchronization signal %d\n", sigInstance);
+	/* Wait for synchronization signal to end (to prevent redetection) */
+
+	debug ("detecting end of synchronization signal %d\n", sigInstance);
+
+	if (recv(sockfd_S, (char *)&event, sizeof(event), 0) != sizeof(event))
+		failTest ("Failed to receive event");
+	if (event.event != htonl(TIPC_WITHDRAWN))
+		failTest ("Signal %d not detected\n");
+
+	closeSocketTIPC (sockfd_S);
+
+	debug ("end of synchronization signal %d\n", sigInstance);
 }
 
 /**
