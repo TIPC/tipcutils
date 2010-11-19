@@ -1282,22 +1282,6 @@ static char usage[] =
 "  -s                                         Get TIPC status info\n"
 "  -v                                         Verbose output\n"
 "  -V                                         Get tipc-config version info\n"
-#if 0
-/* commands proposed, but not yet implemented */
-"  -la    =<linkpat>                          Get link peer address\n"
-"  -lb    =<linkpat>                          Block link \n"
-"  -lc    =<bearer>,<addr> | \n"
-"                   <et:he:ra:dd:re:ss>       Create link\n"
-"  -ld    =<bearer>,<addr> | <linkpat>        Delete link \n"
-"  -lu    =<linkpat>                          Unblock link\n"
-"  -max_remotes  [=<value>]                   Get/set max non-cluster neighbors\n"
-"  -p    [=all|bound|connected|<port>]        Get port info\n"
-"  -ps    =<port>                             Get port statistics\n"
-"  -psr   =<port>                             Reset port statistics\n"
-"  -r    [=<domain>]                          Get routes to domain\n"
-"  -zm                                        Get zone master\n"
-"        [=enable|disable ]                   Assume/relinquish zone\n"
-#endif
 ; /* end of concatenated string literal */
 
 /*
@@ -1345,19 +1329,6 @@ static struct option options[] = {
 	{"max_nodes",    2, 0, OPT_BASE + 21},
 	{"log",          2, 0, OPT_BASE + 22},
 	{"s",            0, 0, OPT_BASE + 23},
-#if 0
-/* commands proposed, but not yet implemented */
-	{"la",           2, 0, OPT_BASE + },
-	{"lc",           2, 0, OPT_BASE + },
-	{"ld",           2, 0, OPT_BASE + },
-	{"lb",           2, 0, OPT_BASE + },
-	{"lu",           2, 0, OPT_BASE + },
-	{"max_remotes",  2, 0, OPT_BASE + },
-	{"ps",           1, 0, OPT_BASE + },
-	{"psr",          1, 0, OPT_BASE + },
-	{"r",            2, 0, OPT_BASE + },
-	{"zm",           2, 0, OPT_BASE + },
-#endif
 	{0, 0, 0, 0}
 };
 
