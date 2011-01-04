@@ -3,7 +3,7 @@
  * 
  * Copyright (c) 2004-2005, Ericsson Research Canada
  * Copyright (c) 2004-2006, Ericsson AB
- * Copyright (c) 2005-2008,2010, Wind River Systems
+ * Copyright (c) 2005-2008,2010-2011, Wind River Systems
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -696,26 +696,6 @@ static void set_max_subscr(char *args)
 				"max subscriptions", "");
 }
 
-static void set_max_zones(char *args)
-{
-	if (!*args)
-		printf("maximum allowed zones%s: %u\n", for_dest(),
-		       do_get_unsigned(TIPC_CMD_GET_MAX_ZONES));
-	else
-		do_set_unsigned(args, TIPC_CMD_SET_MAX_ZONES,
-				"max zones", "");
-}
-
-static void set_max_clusters(char *args)
-{
-	if (!*args)
-		printf("maximum allowed clusters%s: %u\n", for_dest(),
-		       do_get_unsigned(TIPC_CMD_GET_MAX_CLUSTERS));
-	else
-		do_set_unsigned(args, TIPC_CMD_SET_MAX_CLUSTERS,
-				"max clusters", "");
-}
-
 static void set_max_nodes(char *args)
 {
 	if (!*args)
@@ -1272,7 +1252,6 @@ static char usage[] =
 "  -max_ports    [=<value>]                   Get/set max number of ports\n"
 "  -max_publ     [=<value>]                   Get/set max publications\n"
 "  -max_subscr   [=<value>]                   Get/set max subscriptions\n"
-"  -max_zones    [=<value>]                   Get/set max zones in own network\n"
 "  -mng  [=enable|disable]                    Get/set remote management\n"
 "  -n    [=<domain>]                          Get nodes in domain\n"
 "  -netid[=<value>]                           Get/set network id\n"
@@ -1324,11 +1303,9 @@ static struct option options[] = {
 	{"max_ports",    2, 0, OPT_BASE + 16},
 	{"max_subscr",   2, 0, OPT_BASE + 17},
 	{"max_publ",     2, 0, OPT_BASE + 18},
-	{"max_zones",    2, 0, OPT_BASE + 19},
-	{"max_clusters", 2, 0, OPT_BASE + 20},
-	{"max_nodes",    2, 0, OPT_BASE + 21},
-	{"log",          2, 0, OPT_BASE + 22},
-	{"s",            0, 0, OPT_BASE + 23},
+	{"max_nodes",    2, 0, OPT_BASE + 19},
+	{"log",          2, 0, OPT_BASE + 20},
+	{"s",            0, 0, OPT_BASE + 21},
 	{0, 0, 0, 0}
 };
 
@@ -1352,8 +1329,6 @@ void (*cmd_array[])(char *args) = {
 	set_max_ports,
 	set_max_subscr,
 	set_max_publ,
-	set_max_zones,
-	set_max_clusters,
 	set_max_nodes,
 	set_log_size,
 	show_stats,
