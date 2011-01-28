@@ -1247,7 +1247,6 @@ static char usage[] =
 "  -lt    =<linkpat>|<bearer>|<media>/<value> Set link tolerance\n"
 "  -lw    =<linkpat>|<bearer>|<media>/<value> Set link window\n"
 "  -m                                         Get media\n"
-"  -max_clusters [=<value>]                   Get/set max clusters in own zone\n"
 "  -max_nodes    [=<value>]                   Get/set max nodes in own cluster\n"
 "  -max_ports    [=<value>]                   Get/set max number of ports\n"
 "  -max_publ     [=<value>]                   Get/set max publications\n"
