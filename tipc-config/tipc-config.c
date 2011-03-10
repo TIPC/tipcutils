@@ -1150,7 +1150,7 @@ static void enable_bearer(char *args)
 			a, for_dest(), addr2str(domain), pri);
 
 		req_tlv.priority = htonl(pri);
-		req_tlv.detect_scope = htonl(domain);
+		req_tlv.disc_domain = htonl(domain);
 		strncpy(req_tlv.name, a, TIPC_MAX_BEARER_NAME - 1);
 		req_tlv.name[TIPC_MAX_BEARER_NAME - 1] = '\0';
 
