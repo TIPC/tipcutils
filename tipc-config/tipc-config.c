@@ -696,16 +696,6 @@ static void set_max_subscr(char *args)
 				"max subscriptions", "");
 }
 
-static void set_max_nodes(char *args)
-{
-	if (!*args)
-		printf("maximum allowed nodes%s: %u\n", for_dest(),
-		       do_get_unsigned(TIPC_CMD_GET_MAX_NODES));
-	else
-		do_set_unsigned(args, TIPC_CMD_SET_MAX_NODES,
-				"max nodes", "");
-}
-
 static void set_netid(char *args)
 {
 	if (!*args)
@@ -1247,7 +1237,6 @@ static char usage[] =
 "  -lt    =<linkpat>|<bearer>|<media>/<value> Set link tolerance\n"
 "  -lw    =<linkpat>|<bearer>|<media>/<value> Set link window\n"
 "  -m                                         Get media\n"
-"  -max_nodes    [=<value>]                   Get/set max nodes in own cluster\n"
 "  -max_ports    [=<value>]                   Get/set max number of ports\n"
 "  -max_publ     [=<value>]                   Get/set max publications\n"
 "  -max_subscr   [=<value>]                   Get/set max subscriptions\n"
@@ -1302,9 +1291,8 @@ static struct option options[] = {
 	{"max_ports",    2, 0, OPT_BASE + 16},
 	{"max_subscr",   2, 0, OPT_BASE + 17},
 	{"max_publ",     2, 0, OPT_BASE + 18},
-	{"max_nodes",    2, 0, OPT_BASE + 19},
-	{"log",          2, 0, OPT_BASE + 20},
-	{"s",            0, 0, OPT_BASE + 21},
+	{"log",          2, 0, OPT_BASE + 19},
+	{"s",            0, 0, OPT_BASE + 20},
 	{0, 0, 0, 0}
 };
 
@@ -1328,7 +1316,6 @@ void (*cmd_array[])(char *args) = {
 	set_max_ports,
 	set_max_subscr,
 	set_max_publ,
-	set_max_nodes,
 	set_log_size,
 	show_stats,
 	NULL
