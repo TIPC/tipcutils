@@ -7,7 +7,7 @@
  * ------------------------------------------------------------------------
  *
  * Copyright (c) 2001-2005, Ericsson Research Canada
- * Copyright (c) 2004-2006,2010 Wind River Systems
+ * Copyright (c) 2004-2006, 2010-2011 Wind River Systems
  * All rights reserved.
  * Redistribution and use in source and binary forms, with or without 
  * modification, are permitted provided that the following conditions are met:
@@ -486,6 +486,7 @@ int main(int argc, char *argv[], char *dummy[])
 
 	/* Create first child client */
 
+	fflush(stdout);
 	child_pid = fork();
 	if (child_pid < 0) {
 		printf ("Client master: fork failed\n");
@@ -584,6 +585,7 @@ end_latency:
 	while (num_clients < req_clients) {
 		int sz;
 
+		fflush(stdout);
 		child_pid = fork();
 		if (child_pid < 0) {
 			printf ("Client master: fork failed\n");

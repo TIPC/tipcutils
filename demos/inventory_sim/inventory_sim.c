@@ -4,7 +4,7 @@ Name: inventory_sim.c
 
 Short description: TIPC distributed inventory simulation (Linux version)
 
-Copyright (c) 2004-2008,2010 Wind River Systems, Inc.
+Copyright (c) 2004-2008, 2010-2011 Wind River Systems, Inc.
 All rights reserved.
 Redistribution and use in source and binary forms, with or without 
 modification, are permitted provided that the following conditions are met:
@@ -230,6 +230,7 @@ void childSpawn(void *func, void *arg, int argSize, char *taskName)
 {
 	pid_t pid;
 
+	fflush(stdout);
 	pid = fork();
 	if (pid < 0) {
 		perror("Fork failed\n");

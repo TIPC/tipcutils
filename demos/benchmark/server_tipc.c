@@ -174,6 +174,7 @@ int main(int argc, char *argv[], char *dummy[])
 			acceptno++;
 			child_count++;
 	
+			fflush(stdout);
 			child_pid = fork();
 			if (child_pid < 0) {
 				printf ("Server master: fork failed\n");

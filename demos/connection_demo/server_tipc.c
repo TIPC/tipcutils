@@ -90,6 +90,7 @@ int main(int argc, char *argv[], char *dummy[])
 			exit(1);
 		}
 		printf("\nServer: accept() returned\n");
+		fflush(stdout);
 		if (!fork()) {
 			printf ("Server process %d created \n", conn_count);    
 			while (1) {
