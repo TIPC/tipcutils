@@ -2,9 +2,9 @@
 # Makefile for TIPC utilities package
 #
 
-export VERSION = 2.0.1
+export VERSION = 2.0.2
 
-SUBDIRS = tipc-config ptts demos
+SUBDIRS = tipc-config tipc-pipe ptts demos
 
 .PHONY: subdirs $(SUBDIRS) clean
 
