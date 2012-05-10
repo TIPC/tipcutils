@@ -260,7 +260,7 @@ int pipe_start(int tipc)
                trln();
 #endif
                i++;
-               if (pfd[0].revents & POLLHUP || pfd[1].revents & POLLHUP || !data_in_len)
+               if (pfd[0].revents & POLLHUP || pfd[1].revents & POLLHUP && !data_in_len)
                        break;
                usleep(1000 * delay);
        }
