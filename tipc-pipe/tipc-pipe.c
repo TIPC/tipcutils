@@ -57,6 +57,8 @@
 #include <sys/socket.h>
 #include <assert.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
+#include <time.h>
 
 #include <linux/tipc.h>
 
@@ -65,14 +67,14 @@
 #ifdef TRACE_ON
 #define chkne(a) \
 ( ret = (a),\
-       ((ret<0)?fprintf(stderr,"%s:%i %s FAIL errno = %i \"%s\" %i = %s\n",\
+       ((ret<0)?timestamp(),fprintf(stderr,"%s:%i %s FAIL errno = %i \"%s\" %i = %s\n",\
        __FILE__,__LINE__,__FUNCTION__,errno,strerror(errno),ret,#a)\
         :0),\
        ret)
-#define trvd_(d) fprintf(stderr,#d" = %d ",(int)d)
-#define trvx_(d) fprintf(stderr,#d" = %x ",(int)d)
+#define trvd_(d) timestamp(), fprintf(stderr,#d" = %d ",(int)d)
+#define trvx_(d) timestamp(), fprintf(stderr,#d" = %x ",(int)d)
 #define trln() fprintf(stderr,"\n");
-#define trl() fprintf(stderr,"%s:%i %s\n",__FILE__,__LINE__,__FUNCTION__)
+#define trl() timestamp(), fprintf(stderr,"%s:%i %s\n",__FILE__,__LINE__,__FUNCTION__)
 #define trl_() fprintf(stderr,"%s:%i %s ",__FILE__,__LINE__,__FUNCTION__)
 #else
 #define chkne(a) ret=(a)
@@ -107,6 +109,23 @@ static enum client_mode_e {
        multi_server,
        topology_client,
 } mode;
+
+/*
+ * timestamp - print timestamp to stderr
+ */
+static inline void timestamp()
+{
+       struct timeval tv;
+       time_t current;
+       long ms;
+       char buf[30];
+
+       gettimeofday(&tv, NULL);
+       current = tv.tv_sec;
+       strftime(buf, 30, "%T", localtime(&current));
+       ms = tv.tv_usec/1000;
+       fprintf(stderr,"[%s.%03ld] ",buf, ms);
+}
 
 /*
  * tipc_write - unified write, works with connected or connectionless socket.
