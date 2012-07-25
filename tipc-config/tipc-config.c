@@ -46,6 +46,7 @@
 #include <linux/tipc.h>
 #include <linux/tipc_config.h>
 #include <linux/genetlink.h>
+#include <linux/version.h>
 
 /* typedefs */
 
@@ -1036,7 +1037,7 @@ static void set_log_size(char *args)
 				" (this will discard current log contents)");
 	}
 }
-
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,34))
 static void show_stats(char *args)
 {
 	__u32 attr_val_net;
@@ -1060,6 +1061,7 @@ static void show_stats(char *args)
 	print_title_opt("Status%s:\n", "");
 	printf("%s", (char *)TLV_DATA(tlv_area));
 }
+#endif
 
 static void set_link_value(char *linkName, __u32 dummy, const char *vname,
 			   int cmd, int val)
@@ -1150,7 +1152,11 @@ static void enable_bearer(char *args)
 			a, for_dest(), addr2str(domain), pri);
 
 		req_tlv.priority = htonl(pri);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38))
+		req.tlv.detect_scope;
+#else
 		req_tlv.disc_domain = htonl(domain);
+#endif
 		strncpy(req_tlv.name, a, TIPC_MAX_BEARER_NAME - 1);
 		req_tlv.name[TIPC_MAX_BEARER_NAME - 1] = '\0';
 
@@ -1317,7 +1323,9 @@ void (*cmd_array[])(char *args) = {
 	set_max_subscr,
 	set_max_publ,
 	set_log_size,
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,34))
 	show_stats,
+#endif
 	NULL
 };
 
