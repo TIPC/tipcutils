@@ -1153,7 +1153,7 @@ static void enable_bearer(char *args)
 
 		req_tlv.priority = htonl(pri);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38))
-		req.tlv.detect_scope = htonl(domain);
+		req_tlv.detect_scope = htonl(domain);
 #else
 		req_tlv.disc_domain = htonl(domain);
 #endif
