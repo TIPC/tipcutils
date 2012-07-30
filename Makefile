@@ -4,7 +4,7 @@
 
 export VERSION = 2.0.2
 
-DESTDIR = ..
+DESTDIR = .
 SUBDIRS = tipc-config tipc-pipe ptts demos
 
 .PHONY: subdirs $(SUBDIRS) clean

@@ -559,8 +559,8 @@ static __u32 do_command(__u16 cmd, void *req_tlv, __u32 req_tlv_space,
 
 		if (code & 0x80) {
 			code &= 0x7F;
-			printf((code < max_code) 
-			       ? err_string[(int)code] : "unknown error");
+			printf("%s",(code < max_code) ? err_string[(int)code] 
+				: "unknown error");
 			c++;
 		}
 		fatal("%s\n", c);
@@ -907,7 +907,7 @@ static void show_name_table(char *args)
 		lowbound = 0;
 		upbound = ~0;
 	} else
-		fatal(usage);
+		fatal("%s",usage);
 
 	/* issue query & process response */
 
@@ -1342,7 +1342,7 @@ int main(int argc, char *argv[], char *dummy[])
 	int c;
 
 	if (argc == 1)
-		fatal(usage);
+		fatal("%s",usage);
 
 	dest = own_node();
 
@@ -1362,7 +1362,7 @@ int main(int argc, char *argv[], char *dummy[])
 		} else {
 			switch (c) {
 			case '0':
-				fatal(usage);
+				fatal("%s", usage);
 				break;
 			case '1':
 				verbose = 1;
