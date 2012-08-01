@@ -1,0 +1,40 @@
+# Standard sane stuff to ignore
+*.o
+*~
+
+# All the autotools stuff
+Makefile
+Makefile.in
+*.deps
+aclocal.m4
+autom4te.cache/
+autoscan.log
+config.h
+config.h.in
+config.log
+config.status
+configure
+configure.scan
+depcomp
+install-sh
+missing
+stamp-h1
+
+# And now the binaries
+demos/benchmark/client_tipc
+demos/benchmark/server_tipc
+demos/connection_demo/client_tipc
+demos/connection_demo/server_tipc
+demos/hello_world/client_tipc
+demos/hello_world/server_tipc
+demos/inventory_sim/inventory_sim
+demos/multicast_demo/client_tipc
+demos/multicast_demo/server_tipc
+demos/stream_demo/client_tipc
+demos/stream_demo/server_tipc
+demos/topology_subscr_demo/client_tipc
+demos/topology_subscr_demo/server_tipc
+ptts/tipcTC
+ptts/tipcTS
+tipc-config/tipc-config
+tipc-pipe/tipc-pipe
