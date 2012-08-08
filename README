@@ -1,6 +1,6 @@
 TIPC utilities package for Linux README
-       
-Last updated: 04 May 2010
+
+Last updated: 08 Aug 2012
 
 
 This directory contains a variety of utility programs for use with Linux TIPC,
@@ -18,6 +18,9 @@ A collection of demo programs.  The benchmark and inventory simulation demos
 can be helpful in stressing certain aspects of TIPC beyond the areas covered
 by PTTS.
 
+4) TIPC pipe
+A netcat like program for tipc.
+
 
 Building the utilities package
 ------------------------------
@@ -25,37 +28,36 @@ The master makefile for the utilities package allows you to build all programs
 in a single operation.  (If desired, you can also build a specific utility
 individually from its own sub-directory.)
 
-Just do a normal build; the master makefile should locate the necessary TIPC
-include files automatically.
+If you cloned out the git repo you will need to run
 
-eg. cd <top level utility package directory>
+   ./bootstrap
+
+first, if you have the dist tarball you need only run:
+
+    ./configure
     make
 
 If the TIPC include files are not properly located, find the directory that
 contains the files linux/tipc.h and linux/tipc_config.h and specify this
-directory in the make command:
+directory in the configure stage:
 
-eg. cd < level utility package directory>
-    make INCLUDE_PATH=<path to directory containing linux/tipc.h>
+    ./configure  CFLAGS=-I<path to directory containing linux/tipc.h>
 
 Note: In the standard Linux kernel source tree, this directory is located
 at <top of source tree>/include.
-
 
 The build procedure produces executable programs in the various sub-directories
 that make up the package.
 
 
-Additional rules:
+TIPC utilities uses autoconf and automake, to customize your build please
+see the autotools and automake manuals. A few common targets are
 
-1) make clean		- deletes all utility package executables
+    make install
+    make dist
 
 
 Running the utilities package
 -----------------------------
 Consult the README file in each sub-directory for further details on using
 the associated application.
-
-
-[END OF DOCUMENT]
-

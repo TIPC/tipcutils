@@ -48,6 +48,8 @@
 #include <linux/genetlink.h>
 #include <linux/version.h>
 
+#include "config.h"
+
 /* typedefs */
 
 typedef void (*VOIDFUNCPTR) ();
