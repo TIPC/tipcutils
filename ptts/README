@@ -31,17 +31,6 @@ TIPC include files automatically.
 eg. cd <top level test suite directory>
     make
 
-If the TIPC include files are not properly located, find the directory that
-contains the files linux/tipc.h and linux/tipc_config.h and specify this
-directory in the make command:
-
-eg. cd <top level demo directory>
-    make INCLUDE_PATH=<path to directory containing linux/tipc.h>
-
-Note: In the standard Linux kernel source tree, this directory is located
-at <top of source tree>/include.
-
-
 The build procedure produces two executables (tipcTC and tipcTS), representing
 the "client" and "server" sides of the test suite.
 

@@ -37,10 +37,9 @@ first, if you have the dist tarball you need only run:
     ./configure
     make
 
-If the TIPC include files are not properly located, find the directory that
-contains the files linux/tipc.h and linux/tipc_config.h and specify this
-directory in the configure stage:
-
+If the TIPC includes are not found for some reason, 
+or you want to build agains a different set of kernel headers.
+You need to specify this directory in the configure stage as:
     ./configure  CFLAGS=-I<path to directory containing linux/tipc.h>
 
 Note: In the standard Linux kernel source tree, this directory is located
