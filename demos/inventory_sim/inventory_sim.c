@@ -607,7 +607,7 @@ void logTransaction(int sockfd_t, int printTrans)
 		break;
 	case SIM_INFO:
 		if (printTrans)
-			printf(msg.string_area);
+			printf("%s", msg.string_area);
 		break;
 	case SIM_ITEM_IN:
 		if (simState != STORE_OPEN) {
@@ -1566,7 +1566,7 @@ static char usage[] =
 
 void helpSim(void)
 {
-	printf(usage);
+	printf("%s", usage);
 }
 
 

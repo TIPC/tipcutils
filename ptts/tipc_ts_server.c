@@ -1074,8 +1074,8 @@ void tipcTestServer(void)
 	struct sockaddr_tipc addr; /* the TIPC address data structure */
 	struct sockaddr_tipc from; /* the address data structure for the client */
 	struct sockaddr_tipc self; /* the TIPC address data structure */
-	int fromLen = sizeof(struct sockaddr_tipc); /* the length of the return address */
-	int selfLen = sizeof(struct sockaddr_tipc); /* the length of the return address */
+	socklen_t fromLen = sizeof(struct sockaddr_tipc); /* the length of the return address */
+	socklen_t selfLen = sizeof(struct sockaddr_tipc); /* the length of the return address */
 	__u32 domain;
 	__u32 client_domain;
 

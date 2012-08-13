@@ -79,10 +79,11 @@ static char usage[];
 
 #define confirm(fmt, arg...) do { \
 		char c; \
+		int ret; \
 		if (interactive) { \
 			printf(fmt, ##arg); \
-			scanf(" %c", &c); /* leading blank skips whitespace */ \
-			if ((c != '\n') && (c != 'Y') && (c != 'y')) { \
+			ret = scanf(" %c", &c); /* leading blank skips whitespace */ \
+			if ((ret != 1) || ((c != '\n') && (c != 'Y') && (c != 'y'))) { \
 				printf("Exiting...\n"); \
 				exit(EXIT_SUCCESS); \
 			} \

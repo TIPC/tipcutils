@@ -217,7 +217,8 @@ int check_generated_data(int tipc)
                        }
                        i[peer.addr.id.ref % 256] = seq;
                }
-               write(fileno(stdout), buf, len);
+               if (write(fileno(stdout), buf, len) != len)
+		       exit(EXIT_FAILURE);
                i[peer.addr.id.ref % 256]++;
                usleep(1000 * delay);
        }
@@ -267,7 +268,8 @@ int pipe_start(int tipc)
                        }
                        if (data_in_len < 0)
                                break;
-                       write(fileno(stdout), buf, data_in_len);
+                       if (write(fileno(stdout), buf, data_in_len) != data_in_len)
+			       exit(EXIT_FAILURE);
                }
                if (data_in_len > 0)
                        len_total += data_in_len;

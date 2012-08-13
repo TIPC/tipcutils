@@ -278,7 +278,7 @@ int sockfd_L		/* socket to use */
 )
 {
 	struct sockaddr_tipc addr;    /* socket address structure not filled in */
-	int addrlen;         	      /* length of the address */
+	socklen_t addrlen;            /* length of the address */
 	int sockfd_N;                 /* returned socket */
 
 	addrlen = sizeof (addr);
@@ -439,7 +439,7 @@ int *value     /* returned value */
 )
 {
 	char failString[50];  /* string for failure return code */
-	int size;             /* size of the socket option value */
+	socklen_t size;       /* size of the socket option value */
 
 	size = sizeof(*value);
 
