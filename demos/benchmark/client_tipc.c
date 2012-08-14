@@ -305,7 +305,7 @@ void clientmain(unsigned int client_id)
 
 		dprintf("Client %u: rec cmd: bounce %llu messages of size %llu\n",
 		        client_id, cmd.msg_count, cmd.msg_size);
-		init_cnt = counter = cmd.msg_count;
+		counter = cmd.msg_count;
 		burst = 0;
 
 		do {

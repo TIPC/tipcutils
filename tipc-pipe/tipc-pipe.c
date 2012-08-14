@@ -175,7 +175,7 @@ int generate_data(int tipc, int data_num)
                ret = tipc_write(tipc, buf, strlen(buf) + 1);
                if (ret < 0 && errno == EAGAIN) {
                        eagin_stat++;
-                       usleep(100000);
+                       nanosleep(&((struct timespec){.tv_nsec = 100000000}), NULL);
                        goto again;
                }
                if (ret < 0) {
@@ -189,7 +189,7 @@ int generate_data(int tipc, int data_num)
                trvd_(len_total);
                trvd_(ret);
                trln();
-               usleep(1000 * delay);
+               nanosleep(&((struct timespec){.tv_nsec = 1000000 * delay}), NULL);	
        }
        return ret;
 }
@@ -220,7 +220,7 @@ int check_generated_data(int tipc)
                if (write(fileno(stdout), buf, len) != len)
 		       exit(EXIT_FAILURE);
                i[peer.addr.id.ref % 256]++;
-               usleep(1000 * delay);
+               nanosleep(&((struct timespec){.tv_nsec = 1000000 * delay}), NULL);
        }
        trl();
        return len;
@@ -257,7 +257,7 @@ int pipe_start(int tipc)
                      again:
                        chkne(len = tipc_write(tipc, buf, data_in_len));
                        if (len < 0 && errno == EAGAIN) {
-                               usleep(100000);
+                               nanosleep(&((struct timespec){.tv_nsec = 100000000}), NULL);
                                goto again;
                        }
                }
@@ -283,7 +283,7 @@ int pipe_start(int tipc)
                i++;
                if (pfd[0].revents & POLLHUP || pfd[1].revents & POLLHUP && !data_in_len)
                        break;
-               usleep(1000 * delay);
+               nanosleep(&((struct timespec){.tv_nsec = 1000000 * delay}), NULL);
        }
        return len;
 }

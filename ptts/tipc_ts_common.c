@@ -963,7 +963,7 @@ void common_test_socketOptions(void)
 	int sol;                                 /* socket to listen on */
 	struct sockaddr_tipc saddr;              /* address structure for socket */
 	char buf[2048];                          /* buffer for message */
-	char failString[50];                     /* string for the failure return code */
+	char failString[100];                     /* string for the failure return code */
 
 	int ii;                                  /* loop index for the sockets */
 	int jj;                                  /* loop index for the option value */

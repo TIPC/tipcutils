@@ -82,7 +82,7 @@ static char usage[];
 		int ret; \
 		if (interactive) { \
 			printf(fmt, ##arg); \
-			ret = scanf(" %c", &c); /* leading blank skips whitespace */ \
+			ret = scanf(" %1c", &c); /* leading blank skips whitespace */ \
 			if ((ret != 1) || ((c != '\n') && (c != 'Y') && (c != 'y'))) { \
 				printf("Exiting...\n"); \
 				exit(EXIT_SUCCESS); \

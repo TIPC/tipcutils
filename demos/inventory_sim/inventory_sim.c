@@ -568,7 +568,6 @@ void logTransaction(int sockfd_t, int printTrans)
 	int numRetries;
 	int waitTime;
 	int ack_code;
-	int res;
 
 	/* Create connection to transaction sender & receive message */
 
@@ -577,7 +576,7 @@ void logTransaction(int sockfd_t, int printTrans)
 		printf("connection failure\n");
 		return;
 	}
-	if ((res = recv(sockfd_n, &msg, sizeof(msg), MSG_DONTWAIT)) < 0) {
+	if ((recv(sockfd_n, &msg, sizeof(msg), MSG_DONTWAIT)) < 0) {
 		printf("Error receiving transaction\n");
 		goto exit;
 	}
