@@ -519,7 +519,7 @@ void client_test_anc_connection(void)
 		} else {
 			/* check anc to see if the type is TIPC_DESTNAME */
 			anc = CMSG_FIRSTHDR(&ctrlbuf);
-			if (anc == NULL || anc->cmsg_type != TIPC_DESTNAME) {
+			if (anc != NULL || anc->cmsg_type != TIPC_DESTNAME) {
 				anc_data_type(str, anc->cmsg_type);
 				sprintf (failStr,"anc not null, anc data type = %d =%s", 
 					 anc->cmsg_type, str);

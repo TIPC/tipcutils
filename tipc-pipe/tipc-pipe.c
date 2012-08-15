@@ -234,7 +234,9 @@ int pipe_start(int tipc)
 {
        struct pollfd pfd[2];
        struct sockaddr_tipc peer;
-       ssize_t len, data_in_len, len_total = 0;
+       ssize_t len = 0;
+       ssize_t data_in_len = 0;
+       ssize_t len_total = 0; 
        int i = 0;
 
        trl();
@@ -345,6 +347,9 @@ int listen_accept_and_io(int tipc)
                        exit(0);
                }
                goto again;
+       default:
+               printf("Unknown mode");
+               break;
        }
        return ret;
 }
