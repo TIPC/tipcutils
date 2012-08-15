@@ -3,38 +3,38 @@
  * server_tipc.c
  *
  * Short description: TIPC stream demo (server side)
- * 
+ *
  * ------------------------------------------------------------------------
  *
  * Copyright (c) 2005,2010 Wind River Systems
  * All rights reserved.
- * Redistribution and use in source and binary forms, with or without 
+ * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * Redistributions of source code must retain the above copyright notice, this 
+ * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright notice, 
- * this list of conditions and the following disclaimer in the documentation 
+ * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
  * and/or other materials provided with the distribution.
- * Neither the names of the copyright holders nor the names of its 
- * contributors may be used to endorse or promote products derived from this 
+ * Neither the names of the copyright holders nor the names of its
+ * contributors may be used to endorse or promote products derived from this
  * software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * ------------------------------------------------------------------------
  */
- 
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdlib.h>
@@ -75,7 +75,7 @@ int main(int argc, char *argv[], char *dummy[])
 	server_addr.scope = TIPC_ZONE_SCOPE;
 
 	if (bind(listener_sd, (struct sockaddr *)&server_addr,
-		 sizeof(server_addr))) {
+	                sizeof(server_addr))) {
 		perror("Server: failed to bind port name\n");
 		exit(1);
 	}
@@ -98,11 +98,11 @@ int main(int argc, char *argv[], char *dummy[])
 
 		msg_size = recv(peer_sd, inbuf, 4, MSG_WAITALL);
 		if (msg_size == 0) {
-			printf("Server: client terminated normally\n");    
+			printf("Server: client terminated normally\n");
 			exit(0);
 		}
 		if (msg_size < 0) {
-			perror("Server: client terminated abnormally\n");    
+			perror("Server: client terminated abnormally\n");
 			exit(1);
 		}
 
@@ -110,18 +110,18 @@ int main(int argc, char *argv[], char *dummy[])
 
 		rec_size = *(__u32 *)inbuf;
 		rec_size = ntohl(rec_size);
-		printf("Server: receiving record %d of %u bytes\n", 
+		printf("Server: receiving record %d of %u bytes\n",
 		       rec_num, rec_size);
 
 		msg_size = recv(peer_sd, inbuf, rec_size, MSG_WAITALL);
 		if (msg_size != rec_size) {
 			printf("Server: receive error, got %d bytes\n",
-			       msg_size);    
+			       msg_size);
 			exit(1);
 		}
 		while (msg_size > 0) {
 			if ((unsigned char)inbuf[--msg_size] != rec_size) {
-				printf("Server: record content error\n");    
+				printf("Server: record content error\n");
 				exit(1);
 			}
 		}
@@ -133,7 +133,7 @@ int main(int argc, char *argv[], char *dummy[])
 			perror("Server: failed to send response\n");
 			exit(1);
 		}
-		printf("Server: record %d acknowledged\n", rec_num);    
+		printf("Server: record %d acknowledged\n", rec_num);
 	}
 
 	printf("****** TIPC stream demo server finished ******\n");

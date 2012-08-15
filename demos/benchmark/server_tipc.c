@@ -3,34 +3,34 @@
  * server_tipc.c
  *
  * Short description: TIPC benchmark demo (server side)
- * 
+ *
  * ------------------------------------------------------------------------
  *
  * Copyright (c) 2001-2005, Ericsson Research Canada
  * Copyright (c) 2004-2006, Wind River Systems
  * All rights reserved.
- * Redistribution and use in source and binary forms, with or without 
+ * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * Redistributions of source code must retain the above copyright notice, this 
+ * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright notice, 
- * this list of conditions and the following disclaimer in the documentation 
+ * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
  * and/or other materials provided with the distribution.
- * Neither the names of the copyright holders nor the names of its 
- * contributors may be used to endorse or promote products derived from this 
+ * Neither the names of the copyright holders nor the names of its
+ * contributors may be used to endorse or promote products derived from this
  * software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * ------------------------------------------------------------------------
@@ -70,7 +70,7 @@ static void usage(char *app)
 	fprintf(stderr, "Usage:\n");
 	fprintf(stderr, "  %s [-i <idle timeout>]\n", app);
 	fprintf(stderr, "\tidle timeout defaults to %d (seconds)\n",
-		server_timeout);
+	        server_timeout);
 }
 
 int main(int argc, char *argv[], char *dummy[])
@@ -101,9 +101,9 @@ int main(int argc, char *argv[], char *dummy[])
 		case 'i':
 			server_timeout = atoi(optarg);
 			if (server_timeout <= 0) {
-				fprintf(stderr, 
-					"Invalid idle timeout [%d]\n",
-					server_timeout);
+				fprintf(stderr,
+				        "Invalid idle timeout [%d]\n",
+				        server_timeout);
 				exit(1);
 			}
 			break;
@@ -135,7 +135,7 @@ int main(int argc, char *argv[], char *dummy[])
 	server_addr.addr.nameseq.lower = 0;
 	server_addr.addr.nameseq.upper = 0;
 	if (bind(listener_sd, (struct sockaddr *)&server_addr,
-		 sizeof(server_addr)) < 0) {
+	                sizeof(server_addr)) < 0) {
 		printf("Server master: failed to bind port name\n");
 		perror(NULL);
 		exit(1);
@@ -173,7 +173,7 @@ int main(int argc, char *argv[], char *dummy[])
 			alarm(0);
 			acceptno++;
 			child_count++;
-	
+
 			fflush(stdout);
 			child_pid = fork();
 			if (child_pid < 0) {
@@ -206,7 +206,7 @@ int main(int argc, char *argv[], char *dummy[])
 	pfd.events = 0xffff & ~POLLOUT;
 	pollres = poll(&pfd, 1, server_timeout * 1000);
 	if (pollres <= 0) {
-		printf("Server %u: no setup msg after %u sec\n", 
+		printf("Server %u: no setup msg after %u sec\n",
 		       acceptno, server_timeout);
 		exit(1);
 	}
@@ -243,7 +243,7 @@ int main(int argc, char *argv[], char *dummy[])
 			       acceptno, pfd.revents);
 			exit(1);
 		}
-		
+
 		msglen = recv(peer_sd, buf, TIPC_MAX_USER_MSG_SIZE, 0);
 		if (msglen < 0) {
 			printf("Server %u: recv failed (pollres=%x)\n",
@@ -254,14 +254,14 @@ int main(int argc, char *argv[], char *dummy[])
 			dprintf("Server %u: normal conn shutdown\n", acceptno);
 			break;
 		}
-		
+
 		if (!(++msg_count % 50000)) {
 			dprintf("Server %u received %u messages\n",
 			        acceptno, msg_count);
 		}
-		
+
 		if (send(peer_sd, buf, msglen, 0) != msglen) {
-			printf("Server %u: send %u failed (msg len = %u)\n", 
+			printf("Server %u: send %u failed (msg len = %u)\n",
 			       acceptno, msg_count, msglen);
 			perror(NULL);
 			exit(1);

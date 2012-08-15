@@ -3,33 +3,33 @@
  * tipc_ts_client.c
  *
  * Short description: Portable TIPC Test Suite -- common client routines
- * 
+ *
  * ------------------------------------------------------------------------
  *
  * Copyright (c) 2006,2008 Wind River Systems
  * All rights reserved.
- * Redistribution and use in source and binary forms, with or without 
+ * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * Redistributions of source code must retain the above copyright notice, this 
+ * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright notice, 
- * this list of conditions and the following disclaimer in the documentation 
+ * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
  * and/or other materials provided with the distribution.
- * Neither the names of the copyright holders nor the names of its 
- * contributors may be used to endorse or promote products derived from this 
+ * Neither the names of the copyright holders nor the names of its
+ * contributors may be used to endorse or promote products derived from this
  * software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * ------------------------------------------------------------------------
@@ -46,12 +46,12 @@ int TS_BLAST_REPS  = 100000;	/* default # packets sent in blaster testing */
  * client_SendConnectionless - client for connectionless sink server
  */
 
-void client_SendConnectionless 
+void client_SendConnectionless
 (
-int socketType,	  /* socket type to be used SOCK_DGRAM or SOCK_RDM */
-int numRequests,  /* number of times to send the message */
-int msgSize	  /* size of the message to be sent */
-) 
+        int socketType,	  /* socket type to be used SOCK_DGRAM or SOCK_RDM */
+        int numRequests,  /* number of times to send the message */
+        int msgSize	  /* size of the message to be sent */
+)
 {
 	int sockfd_C;				 /* socket */
 	struct sockaddr_tipc addr;	 /* address of socket */
@@ -76,7 +76,7 @@ int msgSize	  /* size of the message to be sent */
 
 void client_test_connectionless
 (
-int sockType	/* socket type to be tested SOCK_DGRAM or SOCK_RDM */
+        int sockType	/* socket type to be tested SOCK_DGRAM or SOCK_RDM */
 )
 {
 	info("\nclient_test_connectionless: subtest 1\n");
@@ -92,7 +92,7 @@ int sockType	/* socket type to be tested SOCK_DGRAM or SOCK_RDM */
 
 		info("\nclient_test_connectionless: subtest 3\n");
 		client_SendConnectionless(sockType, 100, 100);
-		
+
 		info("\nclient_test_connectionless: subtest 4\n");
 		client_SendConnectionless(sockType, 100, 1000);
 	}
@@ -100,14 +100,14 @@ int sockType	/* socket type to be tested SOCK_DGRAM or SOCK_RDM */
 
 /**
  * client_stress_connectionless - run tests using connectionless sockets
- * 
+ *
  * THIS IS A STRESS TEST AND WILL RUN UNTIL THE PROCESS IS TERMINATED
- * 
+ *
  */
 
 void client_stress_connectionless
 (
-int sockType	/* socket type to be tested SOCK_DGRAM or SOCK_RDM */
+        int sockType	/* socket type to be tested SOCK_DGRAM or SOCK_RDM */
 )
 {
 	while (1) {
@@ -117,14 +117,14 @@ int sockType	/* socket type to be tested SOCK_DGRAM or SOCK_RDM */
 
 /**
  * reportBlast - report results of blaster/blastee test
- * 
+ *
  */
 
 void reportBlast
 (
-int numPackets,
-int packetSize,
-unsigned int elapsedTime
+        int numPackets,
+        int packetSize,
+        unsigned int elapsedTime
 )
 {
 	unsigned int divisor = (elapsedTime == 0) ? 1 : elapsedTime;
@@ -145,14 +145,14 @@ unsigned int elapsedTime
 
 /**
  * client_blast_connectionless - run tests using connectionless sockets
- * 
+ *
  */
 
 void client_blast_connectionless
 (
-int sockType,
-int numPackets,
-int packetSize
+        int sockType,
+        int numPackets,
+        int packetSize
 )
 {
 	int sockfd_C;				 /* socket */
@@ -177,14 +177,14 @@ int packetSize
 
 /**
  * client_blast_connection - run tests using connection-oriented sockets
- * 
+ *
  */
 
 void client_blast_connection
 (
-int sockType,
-int numPackets,
-int packetSize
+        int sockType,
+        int numPackets,
+        int packetSize
 )
 {
 	int sockfd_C;				 /* socket */
@@ -217,11 +217,11 @@ void client_test_messageLimits(void)
 
 	info("\nclient_test_messageLimits: \n");
 
-	/*  want to test the limits of 1 and 66000 and everything in between but will 
+	/*  want to test the limits of 1 and 66000 and everything in between but will
 		jump by TS_MSGINC each time just to save time */
 
 	for (msize = 1; msize <= 66000;) {
-		client_SendConnectionless(SOCK_RDM, 1, msize);  
+		client_SendConnectionless(SOCK_RDM, 1, msize);
 
 		debug("message size = %d\n",msize);
 
@@ -235,14 +235,14 @@ void client_test_messageLimits(void)
 }
 
 /**
- * client_mcast - 
+ * client_mcast -
  */
 
 void client_mcast
 (
-int sd,			/* the socket to use */
-int lower,	/* the lower address range */
-int upper	/* the upper address range */
+        int sd,			/* the socket to use */
+        int lower,	/* the lower address range */
+        int upper	/* the upper address range */
 )
 {
 	struct sockaddr_tipc server_addr;  /* address to be filled in */
@@ -252,14 +252,14 @@ int upper	/* the upper address range */
 	setServerAddrTo (&server_addr, TIPC_ADDR_MCAST, TS_TEST_TYPE, lower, upper);
 
 	sprintf(buf, "message to {%u,%u,%u}",
-		server_addr.addr.nameseq.type,
-		server_addr.addr.nameseq.lower,
-		server_addr.addr.nameseq.upper);
+	        server_addr.addr.nameseq.type,
+	        server_addr.addr.nameseq.lower,
+	        server_addr.addr.nameseq.upper);
 	debug("Sending: %s\n", buf);
 
 	len = strlen (buf) + 1;
 	if (len != sendto(sd, buf, len, 0,
-			  (struct sockaddr *)&server_addr, sizeof(struct sockaddr_tipc))) {
+	                  (struct sockaddr *)&server_addr, sizeof(struct sockaddr_tipc))) {
 		failTest("Client: Failed to send");
 	}
 
@@ -290,20 +290,20 @@ void client_test_multicast(void)
 	client_mcast(sd, 200, 399);	 /* multicast to {x, 200, 399} */
 	client_mcast(sd,   0, 399);	 /* multicast to {x,   0, 399} */
 
-	sendSyncTIPC (TS_SYNC_ID_2);      
+	sendSyncTIPC (TS_SYNC_ID_2);
 }
 
 /**
  * client_SendConnection - client for connection-oriented server for SOCK_STREAM and SOCK_SEQPACKET
  */
 
-void client_SendConnection 
+void client_SendConnection
 (
-int socketType,	     /* socket type to use */
-int numMessages,     /* number of messages to send */
-int messageSize,     /* size of the messages sent */
-int numReplies,	     /* number of the replies received */
-int maxReplySize     /* size of the replies */
+        int socketType,	     /* socket type to use */
+        int numMessages,     /* number of messages to send */
+        int messageSize,     /* size of the messages sent */
+        int numReplies,	     /* number of the replies received */
+        int maxReplySize     /* size of the replies */
 )
 {
 	int sockfd_C;				/* socket to use */
@@ -319,7 +319,7 @@ int maxReplySize     /* size of the replies */
 	sockfd_C = createSocketTIPC (socketType);
 
 	/* this is done for the Importance test */
-	setOption(sockfd_C, TIPC_IMPORTANCE, importance);  
+	setOption(sockfd_C, TIPC_IMPORTANCE, importance);
 
 	connectSocketTIPC (sockfd_C, &addr);
 
@@ -342,7 +342,7 @@ int maxReplySize     /* size of the replies */
 
 void client_test_connection
 (
-int sockType		 /* socket type to run test on */
+        int sockType		 /* socket type to run test on */
 )
 {
 	info("\nclient_test_connection: subtest 1\n");
@@ -359,11 +359,11 @@ int sockType		 /* socket type to run test on */
  * 									- valid for SOCK_STREAM and SOCK_SEQPACKET
  */
 
-void client_SendConnectionShutdown 
+void client_SendConnectionShutdown
 (
-int socketType,	       /* socket type to test */
-int numRequests,       /* number of messages to send */
-int requestSize       /* size of the message */
+        int socketType,	       /* socket type to test */
+        int numRequests,       /* number of messages to send */
+        int requestSize       /* size of the message */
 )
 {
 	int sockfd_C;		   /* socket to use */
@@ -383,7 +383,7 @@ int requestSize       /* size of the message */
 	connectSocketTIPC (sockfd_C, &addr);
 
 	/* send the messages */
-	sendSocketTIPC (sockfd_C, numRequests, requestSize, 0);   
+	sendSocketTIPC (sockfd_C, numRequests, requestSize, 0);
 
 	/* now shut down the socket */
 	if (shutdown(sockfd_C, SHUT_RDWR) != 0)	/* second parameter ignored*/
@@ -401,7 +401,7 @@ int requestSize       /* size of the message */
 
 void client_test_connection_shutdown
 (
-int sockType   /* socket type to use SOCK_SEQPACKET or SOCK_STREAM */
+        int sockType   /* socket type to use SOCK_SEQPACKET or SOCK_STREAM */
 )
 {
 	info("\nclient_test_connection: subtest 1\n");
@@ -415,10 +415,10 @@ int sockType   /* socket type to use SOCK_SEQPACKET or SOCK_STREAM */
 }
 
 /**
- * client_test_importance 	- run connection/connectionless tests while changing 
- *                  		the importance level 
+ * client_test_importance 	- run connection/connectionless tests while changing
+ *                  		the importance level
  * 							- this test reruns previous tests with the client server
- * 							synchronization	being done at that level 
+ * 							synchronization	being done at that level
  * 							- do not mix the order of the tests	unless the server code
  * 							is also changed to match
  */
@@ -428,8 +428,8 @@ void client_test_importance(void)
 	int localImportance = importance;	/* save to restore later */
 
 	for (importance = TIPC_LOW_IMPORTANCE;
-	    importance <= TIPC_CRITICAL_IMPORTANCE; 
-	    importance++) {
+	                importance <= TIPC_CRITICAL_IMPORTANCE;
+	                importance++) {
 		info("TIPC Client testing TIPC_IMPORTANCE = %d\n", importance);
 
 		client_test_connectionless(SOCK_DGRAM);
@@ -439,7 +439,7 @@ void client_test_importance(void)
 		info("TIPC Client connectionless importance RDM test PASSED\n");
 
 		client_test_connection(SOCK_STREAM);
-		info("TIPC Client connection importance STREAM test PASSED\n"); 
+		info("TIPC Client connection importance STREAM test PASSED\n");
 
 		client_test_connection(SOCK_SEQPACKET);
 		info("TIPC Client connection importance SEQPACKET test PASSED\n");
@@ -455,7 +455,7 @@ void client_test_importance(void)
 }
 
 /**
- * client_test_anc_connection - test the Ancillary data for Connection based sockets  
+ * client_test_anc_connection - test the Ancillary data for Connection based sockets
  */
 
 void client_test_anc_connection(void)
@@ -521,8 +521,8 @@ void client_test_anc_connection(void)
 			anc = CMSG_FIRSTHDR(&ctrlbuf);
 			if (anc != NULL || anc->cmsg_type != TIPC_DESTNAME) {
 				anc_data_type(str, anc->cmsg_type);
-				sprintf (failStr,"anc not null, anc data type = %d =%s", 
-					 anc->cmsg_type, str);
+				sprintf (failStr,"anc not null, anc data type = %d =%s",
+				         anc->cmsg_type, str);
 				failTest(failStr);
 			}
 			strcpy (buf ,"TWO");
@@ -543,8 +543,8 @@ void client_test_anc_connection(void)
 
 	if (anc->cmsg_type != TIPC_ERRINFO) {
 		anc_data_type(str, anc->cmsg_type);
-		sprintf (failStr,"bad anc data type = %d = %s", 
-			 anc->cmsg_type, str);
+		sprintf (failStr,"bad anc data type = %d = %s",
+		         anc->cmsg_type, str);
 		failTest(failStr);
 	}
 
@@ -576,7 +576,7 @@ void client_test_anc_connection(void)
 		failTest ("wrong returned message");
 
 	}
-	debug ("returned msg: %s\n" ,(char*) CMSG_DATA (anc));   
+	debug ("returned msg: %s\n" ,(char*) CMSG_DATA (anc));
 
 	closeSocketTIPC (soc);
 	debug ("PASSED (client)\n");
@@ -585,7 +585,7 @@ void client_test_anc_connection(void)
 }
 
 /**
- * client_test_anc_connectionless - test the Ancillary data for Connectionless based sockets  
+ * client_test_anc_connectionless - test the Ancillary data for Connectionless based sockets
  */
 
 void client_test_anc_connectionless(void)
@@ -610,7 +610,7 @@ void client_test_anc_connectionless(void)
 
 	ctrlbuf.msg_iov = iov;
 	ctrlbuf.msg_iovlen = 1;
-	ctrlbuf.msg_name = NULL;        
+	ctrlbuf.msg_name = NULL;
 	ctrlbuf.msg_namelen = 0;
 	ctrlbuf.msg_controllen = (CMSG_SPACE(8) + CMSG_SPACE(1024));
 	ctrlbuf.msg_control = (void*)anc;
@@ -636,7 +636,7 @@ void client_test_anc_connectionless(void)
 
 	ctrlbuf.msg_controllen = CMSG_SPACE(8) + CMSG_SPACE(1024);
 
-	debug ("anc receiving...\n"); 
+	debug ("anc receiving...\n");
 
 	sz = recvmsg(soc ,&ctrlbuf ,0);	   /* now try and receive the message */
 
@@ -658,7 +658,7 @@ void client_test_anc_connectionless(void)
 		failTest (failStr);
 	}
 
-	debug ("anc : got anc data\n");   
+	debug ("anc : got anc data\n");
 	anc_data[0] = *((unsigned int*)(CMSG_DATA(anc) + 0));
 	anc_data[1] = *((unsigned int*)(CMSG_DATA(anc) + 4));
 
@@ -693,7 +693,7 @@ void client_test_anc_connectionless(void)
 }
 
 /**
- * client_test_socketOptions - test the TIPC socket options on the client  
+ * client_test_socketOptions - test the TIPC socket options on the client
  */
 
 void client_test_socketOptions(void)
@@ -704,7 +704,7 @@ void client_test_socketOptions(void)
 }
 
 /**
- * client_test_stream -   
+ * client_test_stream -
  */
 
 void client_test_stream(void)
@@ -743,12 +743,12 @@ void client_test_stream(void)
 		rec_num++;
 		size = rec_size;
 
-		buf[tot_size] = (size >> 24); 
-		buf[tot_size + 1] = (size >> 16) & 0xFF; 
-		buf[tot_size + 2] = (size >> 8) & 0xFF; 
-		buf[tot_size + 3] = size & 0xFF; 
+		buf[tot_size] = (size >> 24);
+		buf[tot_size + 1] = (size >> 16) & 0xFF;
+		buf[tot_size + 2] = (size >> 8) & 0xFF;
+		buf[tot_size + 3] = size & 0xFF;
 		memset(&buf[tot_size + 4], rec_size, rec_size);
-		info("Client: creating record %d of size %d bytes\n", 
+		info("Client: creating record %d of size %d bytes\n",
 		     rec_num, rec_size);
 
 		tot_size += (4 + rec_size);
@@ -793,7 +793,7 @@ void client_test_stream(void)
 
 
 /**
- * client_test_bigStream - run big stream test  
+ * client_test_bigStream - run big stream test
  */
 
 void client_test_bigStream(void)
@@ -825,7 +825,7 @@ void client_test_bigStream(void)
 }
 
 /**
- * client_test_sendto - test the TIPC sendto and recvfrom on the client  
+ * client_test_sendto - test the TIPC sendto and recvfrom on the client
  */
 
 void client_test_sendto(void)
@@ -842,7 +842,7 @@ void client_test_sendto(void)
 
 void sendTIPCTest
 (
-int test	 /* test number to send to the server */
+        int test	 /* test number to send to the server */
 )
 {
 	int msgSize;		   /* size of the message to be sent */
@@ -858,18 +858,18 @@ int test	 /* test number to send to the server */
 	testbuf = htonl(test);
 	msgSize = sizeof(testbuf);
 
-	res = sendto (sockfd_C, (void *)&testbuf, msgSize, 0, 
-		      (struct sockaddr *)&addr, sizeof (addr));
+	res = sendto (sockfd_C, (void *)&testbuf, msgSize, 0,
+	              (struct sockaddr *)&addr, sizeof (addr));
 
 	if (res != msgSize)
 		failTest ("unexpected sendto() error sending Server test number");
 
 	closeSocketTIPC (sockfd_C);
 
-	/* only send the next sync if the 
+	/* only send the next sync if the
 		server is not going to kill itself */
 	if (test > 0) {
-		sendSyncTIPC (TS_SYNC_FINISHED_TEST_ID);  
+		sendSyncTIPC (TS_SYNC_FINISHED_TEST_ID);
 	}
 }
 
@@ -920,7 +920,7 @@ void client_test_shutdown_stream(void)
 
 /**
  * client_test_shutdown_seqpacket - wrapper to call client_test_connection_shutdown(SOCK_SEQPACKET)
- */  
+ */
 
 void client_test_shutdown_seqpacket(void)
 {
@@ -942,7 +942,8 @@ void client_stress_rdm(void)
  */
 
 int cblastSize[] = { 1, 32, 64, 100, 128, 256, 512, 1000, 1024, 1280,
-	1450, 2048, 8192, 10000, 0};
+                     1450, 2048, 8192, 10000, 0
+                   };
 /**
  * client_blast_rdm - wrapper to call client_blast_connectionless()
  */
@@ -953,7 +954,7 @@ void client_blast_rdm(void)
 
 	while (cblastSize[i] != 0) {
 		client_blast_connectionless(SOCK_RDM, TS_BLAST_REPS,
-					    cblastSize[i]);
+		                            cblastSize[i]);
 		i++;
 	}
 }
@@ -968,7 +969,7 @@ void client_blast_seqpacket(void)
 
 	while (cblastSize[i] != 0) {
 		client_blast_connection(SOCK_SEQPACKET, TS_BLAST_REPS,
-					cblastSize[i]);
+		                        cblastSize[i]);
 		i++;
 	}
 }
@@ -983,14 +984,14 @@ void client_blast_stream(void)
 
 	while (cblastSize[i] != 0) {
 		client_blast_connection(SOCK_STREAM, TS_BLAST_REPS,
-					cblastSize[i]);
+		                        cblastSize[i]);
 		i++;
 	}
 }
 
 
 /**
- * tipcTestSuiteHelp - print out the valid tests 
+ * tipcTestSuiteHelp - print out the valid tests
  */
 
 void tipcTestSuiteHelp(void)
@@ -1013,8 +1014,8 @@ void tipcTestSuiteHelp(void)
 }
 
 /**
- * clientList - list of all client tests, must be in sync with: 
- * 		nameList[] in tipc_ts_common.c and 
+ * clientList - list of all client tests, must be in sync with:
+ * 		nameList[] in tipc_ts_common.c and
  * 		serverList[] in tipc_ts_server.c and
  * 		TS_NUM in tipc_ts.h
  */
@@ -1041,61 +1042,60 @@ TSTEST clientList[] = {
 	{ts_blast_seqpacket, client_blast_seqpacket},
 	{ts_blast_stream, client_blast_stream},
 #endif
-	{ts_lastSanityTest, NULL},      
+	{ts_lastSanityTest, NULL},
 	{ts_stress_rdm, client_stress_rdm},
-	{ts_lastStressTest, NULL}       
+	{ts_lastStressTest, NULL}
 };
 
 
 /**
- * tipcTestClientX - run specified TIPC test 
+ * tipcTestClientX - run specified TIPC test
  */
 
 void tipcTestClientX
 (
-int test /* the test to run */
+        int test /* the test to run */
 )
 {
 	int ntimes = TS_NUMTIMES; /* this is the number of times a test will be run */
 	int testIndex; /* this is the index used to find the test we want to run */
 
 	if ((test < TS_FIRST_SANITY_TEST)
-	    || (test >= (ts_lastStressTest))
-	    ||((test>= ts_lastSanityTest) && (test < TS_FIRST_STRESS_TEST))) {
+	                || (test >= (ts_lastStressTest))
+	                ||((test>= ts_lastSanityTest) && (test < TS_FIRST_STRESS_TEST))) {
 		tipcTestSuiteHelp();
 		killme(1);
 	}
-	
-	printf ("Test # %d\n", test); 
+
+	printf ("Test # %d\n", test);
 	sendTIPCTest(test);	/* tell the server what to do */
 
-	/* now loop through all the tests and locate the one we want to run */  
+	/* now loop through all the tests and locate the one we want to run */
 	for (testIndex = 0; testIndex <= TS_NUMBER_OF_TESTS; testIndex++) {
 		if (clientList[testIndex].testNum == test)
 			do {
 				printf("TIPC %s test...STARTED!\n", testName(test));
 				clientList[testIndex].test();
-				printf("TIPC %s test...PASSED!\n", testName(test));       
+				printf("TIPC %s test...PASSED!\n", testName(test));
 
 				if (TS_NUMTIMES > 1)
 					printf("Client test loop %d\n", ntimes);
 
 				printf("\n");
-			}
-			while ( --ntimes > 0 );
+			} while ( --ntimes > 0 );
 	}
 }
 
 /**
  * tipcTestClient - run TIPC sanity test X
  *      	  - test 0 will run all tests
- *      	  - if killFlag is set TS_KILL_SERVER is sent to the server to kill it 
- * 
+ *      	  - if killFlag is set TS_KILL_SERVER is sent to the server to kill it
+ *
  */
 
 void tipcTestClient
 (
-int test	/* test number to run (0 = all tests) */
+        int test	/* test number to run (0 = all tests) */
 )
 {
 	int lastTestNum; /* the last test to be run */
@@ -1106,8 +1106,8 @@ int test	/* test number to run (0 = all tests) */
 		return;
 	}
 
-	if (((test >= ts_lastSanityTest) && (test < TS_FIRST_STRESS_TEST)) 
-	    || (test >= ts_lastStressTest) || (test < 0)) {
+	if (((test >= ts_lastSanityTest) && (test < TS_FIRST_STRESS_TEST))
+	                || (test >= ts_lastStressTest) || (test < 0)) {
 		tipcTestSuiteHelp();
 		killme(1);
 	}
@@ -1126,6 +1126,6 @@ int test	/* test number to run (0 = all tests) */
 	importance = TIPC_LOW_IMPORTANCE; /* set up the default */
 
 	for (; test <= lastTestNum; test++)
-		tipcTestClientX(test);    
+		tipcTestClientX(test);
 }
 

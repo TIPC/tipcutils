@@ -9,33 +9,33 @@
  * Copyright (c) 2003, Ericsson Research Canada
  * Copyright (c) 2005,2010 Wind River Systems
  * All rights reserved.
- * Redistribution and use in source and binary forms, with or without 
+ * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * Redistributions of source code must retain the above copyright notice, this 
+ * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright notice, 
- * this list of conditions and the following disclaimer in the documentation 
+ * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
  * and/or other materials provided with the distribution.
- * Neither the name of the copyright holders nor the names of its 
- * contributors may be used to endorse or promote products derived from this 
+ * Neither the name of the copyright holders nor the names of its
+ * contributors may be used to endorse or promote products derived from this
  * software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * ------------------------------------------------------------------------
  */
- 
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdlib.h>
@@ -98,42 +98,42 @@ void wait_for_server(__u32 name_type, __u32 name_instance, int wait)
 
 void client_mcast(int sd, int lower, int upper)
 {
-        struct sockaddr_tipc server_addr;
-        char buf[100];
+	struct sockaddr_tipc server_addr;
+	char buf[100];
 
 	server_addr.family = AF_TIPC;
-        server_addr.addrtype = TIPC_ADDR_MCAST;
-        server_addr.addr.nameseq.type = SERVER_TYPE;
-        server_addr.addr.nameseq.lower = lower;
-        server_addr.addr.nameseq.upper = upper;
-	
+	server_addr.addrtype = TIPC_ADDR_MCAST;
+	server_addr.addr.nameseq.type = SERVER_TYPE;
+	server_addr.addr.nameseq.lower = lower;
+	server_addr.addr.nameseq.upper = upper;
+
 	if (sd >= 0) {
 		sprintf(buf, "message to {%u,%u,%u}",
-			server_addr.addr.nameseq.type,
-			server_addr.addr.nameseq.lower,
-			server_addr.addr.nameseq.upper);
+		        server_addr.addr.nameseq.type,
+		        server_addr.addr.nameseq.lower,
+		        server_addr.addr.nameseq.upper);
 		printf("Client: sending %s\n", buf);
 	} else {
 		sd = -sd;
 		buf[0] = '\0';
 		printf("Client: sending termination message to {%u,%u,%u}\n",
-			server_addr.addr.nameseq.type,
-			server_addr.addr.nameseq.lower,
-			server_addr.addr.nameseq.upper);
+		       server_addr.addr.nameseq.type,
+		       server_addr.addr.nameseq.lower,
+		       server_addr.addr.nameseq.upper);
 	}
 
-        if (0 > sendto(sd, buf, strlen(buf) + 1, 0,
-                       (struct sockaddr *)&server_addr, sizeof(server_addr))) {
-                perror("Client: failed to send");
+	if (0 > sendto(sd, buf, strlen(buf) + 1, 0,
+	                (struct sockaddr *)&server_addr, sizeof(server_addr))) {
+		perror("Client: failed to send");
 		exit(1);
-        }
+	}
 }
 
 /**
  * Mainline for client side of multicast demo.
- * 
+ *
  * Usage: client_tipc [lower [upper [kill]]]
- * 
+ *
  * If no arguments supplied, sends a predetermined set of multicast messages.
  * If optional "lower" and "upper" arguments are specified, client sends a
  * single message to the specified instance range; if "upper" is omitted,
@@ -148,14 +148,14 @@ int main(int argc, char *argv[], char *envp[])
 	int lower;
 	int upper;
 	char dummy;
-        int sd = socket(AF_TIPC, SOCK_RDM, 0);
+	int sd = socket(AF_TIPC, SOCK_RDM, 0);
 
 	if (sd < 0) {
 		printf("TIPC not active on this node\n");
 		exit(1);
 	}
 
-        /* run standard demo if no arguments supplied by user */
+	/* run standard demo if no arguments supplied by user */
 
 	if (argc < 2) {
 		printf("****** TIPC client multicast demo started ******\n\n");
@@ -183,8 +183,7 @@ int main(int argc, char *argv[], char *envp[])
 			perror("Client: invalid upper bound");
 			exit(1);
 		}
-	}
-	else
+	} else
 		upper = lower;
 
 	client_mcast((argc > 3) ? -sd : sd, lower, upper);

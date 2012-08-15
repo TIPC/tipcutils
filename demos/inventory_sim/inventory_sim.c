@@ -1,40 +1,40 @@
 /* ------------------------------------------------------------------------
- 
+
 Name: inventory_sim.c
 
 Short description: TIPC distributed inventory simulation (Linux version)
 
 Copyright (c) 2004-2008, 2010-2011 Wind River Systems, Inc.
 All rights reserved.
-Redistribution and use in source and binary forms, with or without 
+Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
-Redistributions of source code must retain the above copyright notice, this 
+Redistributions of source code must retain the above copyright notice, this
 list of conditions and the following disclaimer.
-Redistributions in binary form must reproduce the above copyright notice, 
-this list of conditions and the following disclaimer in the documentation 
+Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
 and/or other materials provided with the distribution.
-Neither the names of the copyright holders nor the names of its 
-contributors may be used to endorse or promote products derived from this 
+Neither the names of the copyright holders nor the names of its
+contributors may be used to endorse or promote products derived from this
 software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 
 
 DESCRIPTION
 This file is a demo program that illustrates how TIPC can be used to support
 distributed applications.  It takes advantage of TIPC's socket-based
-messaging, as well as its port naming and port name subscription capabilities. 
+messaging, as well as its port naming and port name subscription capabilities.
 
 The demo is a simulation of a store that stocks a variety of numbered items
 which are sold to customers upon request.  By default, items and customers
@@ -65,7 +65,7 @@ items are available and the less likely a customer will be to walk out of a
 store because the item they desire is unavailable.
 
 When a simulation is terminated the logging task waits for all customers to
-leave, then creates a janitor task to dispose of the unsold items that remain.  
+leave, then creates a janitor task to dispose of the unsold items that remain.
 TIPC's name subscription capability allows the janitor to distinguish the items
 belonging to its own store from those in other stores.
 
@@ -90,7 +90,7 @@ tasks manually.
 Building the demo
 -----------------
 The demo is built as a normal TIPC application.  The accompanying Makefile
-builds a "inventory_sim" executable and creates softlinks to a set of aliases 
+builds a "inventory_sim" executable and creates softlinks to a set of aliases
 (eg. newSim, killSim, ...) that are used to invoke the main executable to do
 specific operations.
 
@@ -220,7 +220,7 @@ int randomGet(int minValue, int maxValue)
  *
  * childSpawn - start up a child process
  *
- * This routine forks off a child process.  The child primes its own random # 
+ * This routine forks off a child process.  The child primes its own random #
  * generator and invokes its mainline function; when the mainline returns
  * the child exits.  The parent simply returns once child is created.
  *
@@ -249,7 +249,7 @@ void childSpawn(void *func, void *arg, int argSize, char *taskName)
  * simDelay - sleep for a specified interval
  *
  * This routine delays the invoking task by using a bogus subscription
- * to TIPC's topology server to generate the necessary timeout. 
+ * to TIPC's topology server to generate the necessary timeout.
  *
  */
 
@@ -279,7 +279,7 @@ void simDelay(int delay_in_msecs)
 	subscr.timeout   = htonl(delay_in_msecs);
 
 	if (sendto(sockfd, &subscr, sizeof(subscr), 0,
-		   (struct sockaddr *)&topsrv, sizeof(topsrv)) < 0) {
+	                (struct sockaddr *)&topsrv, sizeof(topsrv)) < 0) {
 		printf("simDelay: Can't issue timeout subscription\n");
 		goto exit;
 	}
@@ -338,7 +338,7 @@ int simFind(void)
 	subscr.filter = htonl(TIPC_SUB_SERVICE);
 
 	if (sendto(sockfd_s, &subscr, sizeof(subscr), 0,
-		   (struct sockaddr *)&topsrv, sizeof(topsrv)) < 0) {
+	                (struct sockaddr *)&topsrv, sizeof(topsrv)) < 0) {
 		printf("subscription failure\n");
 		goto exit;
 	}
@@ -400,8 +400,8 @@ int simLog(int code, const char *fmt, ...)
 	trans_srv_addr.addr.name.domain = 0;
 
 	if (sendto(sockfd, &msg, (sizeof(code) + len), 0,
-		   (struct sockaddr *)&trans_srv_addr,
-		   sizeof(trans_srv_addr)) < 0) {
+	                (struct sockaddr *)&trans_srv_addr,
+	                sizeof(trans_srv_addr)) < 0) {
 		printf("Can't send transaction\n");
 		res = SIM_ERROR;
 		goto exit;
@@ -468,7 +468,7 @@ void simJanitorTask(void *arg)
 	subscr.filter = htonl(TIPC_SUB_PORTS);
 
 	if (sendto(sockfd_s, &subscr, sizeof(subscr), 0,
-		   (struct sockaddr *)&topsrv, sizeof(topsrv)) < 0) {
+	                (struct sockaddr *)&topsrv, sizeof(topsrv)) < 0) {
 		simLog(SIM_ERROR, "janitor subscription failure\n");
 		goto exit;
 	}
@@ -483,11 +483,11 @@ void simJanitorTask(void *arg)
 			break;	/* all done */
 
 		if ((event.event == htonl(TIPC_PUBLISHED)) &&
-		    (event.port.node == htonl(self.addr.id.node))) {
+		                (event.port.node == htonl(self.addr.id.node))) {
 
 			/*
 			 * Fake a purchase request to trigger item
-			 * self-destruction, but don't worry about 
+			 * self-destruction, but don't worry about
 			 * whether item is really obtained or not
 			 */
 
@@ -506,9 +506,9 @@ void simJanitorTask(void *arg)
 		}
 	}
 
-	/* 
+	/*
 	 * Delay a bit to allow items to finish cleaning themselves up,
-	 * then tell logging task to shut down 
+	 * then tell logging task to shut down
 	 */
 
 	simDelay(100);
@@ -730,7 +730,7 @@ void simLogTask(void *arg)
 	trans_srv_addr.scope = TIPC_NODE_SCOPE;
 
 	res = bind(sockfd_t, (struct sockaddr *)&trans_srv_addr,
-		   sizeof(trans_srv_addr));
+	           sizeof(trans_srv_addr));
 	if (res < 0) {
 		printf("Can't bind to transaction socket\n");
 		goto exit;
@@ -821,7 +821,7 @@ void simLogTask(void *arg)
 			FD_SET(sockfd_w, &readFds);
 			sockfd_max = (sockfd_t > sockfd_w) ? sockfd_t : sockfd_w;
 			if (select(sockfd_max + 1, &readFds, NULL, NULL, NULL)
-			    < 0) {
+			                < 0) {
 				printf("Select error\n");
 				goto exit;
 			}
@@ -843,7 +843,7 @@ void simLogTask(void *arg)
 						/* display final stats */
 						showSim();
 						childSpawn(simJanitorTask,
-							   (void *)0, 0, "Janitor");
+						           (void *)0, 0, "Janitor");
 					}
 					break;
 				case STORE_CLOSED:
@@ -861,7 +861,7 @@ void simLogTask(void *arg)
 				}
 			}
 
-			/* 
+			/*
 			 * Process item 0 or timeout, if present
 			 * (ignore withdraw events and stale timeouts;
 			 * also ignore events when store is closing)
@@ -870,8 +870,8 @@ void simLogTask(void *arg)
 			if (!FD_ISSET(sockfd_w, &readFds))
 				continue;
 
-			if ((res = recv(sockfd_w, &event, sizeof(event), 0)) 
-			    < 0) {
+			if ((res = recv(sockfd_w, &event, sizeof(event), 0))
+			                < 0) {
 				printf("Error recv subscription on item 0\n");
 				goto exit;
 			}
@@ -882,7 +882,7 @@ void simLogTask(void *arg)
 			if (event.event == htonl(TIPC_PUBLISHED))
 				break;
 			if ((event.event == htonl(TIPC_SUBSCR_TIMEOUT)) &&
-			    (event.s.usr_handle[0] == subscr.usr_handle[0]))
+			                (event.s.usr_handle[0] == subscr.usr_handle[0]))
 				break;
 		}
 
@@ -932,7 +932,7 @@ int simItem(int itemID, int lagTime, int speed)
 	int sockfd_s;
 	struct sockaddr_tipc addr;
 	struct sockaddr_tipc self;
-	socklen_t addrlen; 
+	socklen_t addrlen;
 	char inMsg[MSG_SIZE_MAX];
 	char outMsg[MSG_SIZE_MAX];
 	char *marker;
@@ -1100,8 +1100,8 @@ void newItem(int itemID, int repeats)
 	if (arg.itemID == 0) {
 		/* use random item # */
 	} else if ((arg.itemID < 0) ||
-	    (arg.itemID < DEMO_ITEM_ID_MIN) || 
-	    (arg.itemID > DEMO_ITEM_ID_MAX)) {
+	                (arg.itemID < DEMO_ITEM_ID_MIN) ||
+	                (arg.itemID > DEMO_ITEM_ID_MAX)) {
 		printf("Invalid item number specified\n");
 		return;
 	}
@@ -1127,7 +1127,7 @@ int simCust(int itemID, int lagTime, int waitTime, int speed, int taskID)
 	struct tipc_event event;
 	struct sockaddr_tipc addr;
 	struct sockaddr_tipc self;
-	socklen_t addrlen; 
+	socklen_t addrlen;
 	char msg[MSG_SIZE_MAX];
 	char *marker;
 	int msgSize;
@@ -1206,7 +1206,7 @@ int simCust(int itemID, int lagTime, int waitTime, int speed, int taskID)
 	addr.addr.name.name.instance = TIPC_TOP_SRV;
 
 	if (sendto(sockfd_s, &subscr, sizeof (subscr), 0,
-		   (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+	                (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		simLog(SIM_ERROR, "%s can't connect to TOP server\n", custName);
 		goto exit;
 	}
@@ -1226,7 +1226,7 @@ int simCust(int itemID, int lagTime, int waitTime, int speed, int taskID)
 		}
 		if (event.event == htonl(TIPC_SUBSCR_TIMEOUT)) {
 			simRes = simLog(SIM_CUST_OUT, "%d %d %d %d",
-					customerID, itemID, transactionID, waitTime);
+			                customerID, itemID, transactionID, waitTime);
 			break;
 		}
 		if (event.event == htonl(TIPC_WITHDRAWN)) {
@@ -1249,11 +1249,11 @@ int simCust(int itemID, int lagTime, int waitTime, int speed, int taskID)
 		addrlen = sizeof(addr);
 
 		sprintf(msg, "<%d.%d.%d>[%d:%d]", zone, cluster, node,
-			customerID, ++transactionID);
+		        customerID, ++transactionID);
 		msgSize = strlen(msg) + 1;
 
 		res = sendto(sockfd_c, msg, msgSize, 0,
-			     (struct sockaddr *)&addr, addrlen);
+		             (struct sockaddr *)&addr, addrlen);
 		if (res != msgSize) {
 			simLog(SIM_ERROR, "%s unable to send request to item %d\n",
 			       custName, itemID);
@@ -1265,7 +1265,7 @@ int simCust(int itemID, int lagTime, int waitTime, int speed, int taskID)
 		timeLimit.tv_sec = (waitTime / 1000);
 		timeLimit.tv_usec = (waitTime % 1000) * 1000;
 		if (select(sockfd_c + 1, &readFds, NULL, NULL,
-			   &timeLimit) == 0) {
+		                &timeLimit) == 0) {
 			simLog(SIM_WARN, "Customer %d missed item %d "
 			       "(no reply from item)\n",
 			       customerID, itemID);
@@ -1279,15 +1279,15 @@ int simCust(int itemID, int lagTime, int waitTime, int speed, int taskID)
 				if ((marker = strchr(msg, '>')) != NULL)
 					*(marker + 1) = '\0';
 				simRes = simLog(SIM_CUST_OUT, "%d %d %d %s",
-						customerID, itemID,
-						(transactionID - 1), msg);
+				                customerID, itemID,
+				                (transactionID - 1), msg);
 				needItem = 0;
 			}
 		}
 
 		close(sockfd_c);
 
-		/* 
+		/*
 		 * Wait 0.5s before retrying to allow item name to be withdrawn
 		 * from TIPC name table (in case item was on a slow CPU)
 		 */
@@ -1325,7 +1325,7 @@ void simCustTask(struct cust_task_arg *arg)
 
 	do {
 		simRes = simCust(arg->itemID, arg->lagTime, arg->waitTime,
-				 arg->speed, arg->taskID);
+		                 arg->speed, arg->taskID);
 		if (simRes < 0)
 			break;
 	} while ((arg->repeats < 0) || (--arg->repeats > 0));
@@ -1356,8 +1356,8 @@ void newCust(int itemID, int repeats)
 	if (arg.itemID == 0) {
 		/* use random item # */
 	} else if ((arg.itemID < 0) ||
-	    (arg.itemID < DEMO_ITEM_ID_MIN) || 
-	    (arg.itemID > DEMO_ITEM_ID_MAX)) {
+	                (arg.itemID < DEMO_ITEM_ID_MIN) ||
+	                (arg.itemID > DEMO_ITEM_ID_MAX)) {
 		printf("Invalid item number specified\n");
 		return;
 	}
@@ -1459,7 +1459,7 @@ void itemZeroTask(void *arg)
 	int res;
 
 	/* Publish "item 0" name */
-	
+
 	sockfd_i = socket(AF_TIPC, SOCK_RDM, 0);
 	if (sockfd_i < 0) {
 		printf("Unable to create socket to halt simulation\n");
@@ -1519,7 +1519,7 @@ void startSim(void)
 	int res;
 
 	/* Send message to "item 0" name to trigger simulation resumption */
-	
+
 	sockfd_c = socket(AF_TIPC, SOCK_RDM, 0);
 	if (sockfd_c < 0) {
 		printf("Unable to create socket to resume simulation\n");
@@ -1534,7 +1534,7 @@ void startSim(void)
 	addrlen = sizeof(addr);
 
 	res = sendto(sockfd_c, &msg, sizeof(msg), 0,
-		     (struct sockaddr *)&addr, addrlen);
+	             (struct sockaddr *)&addr, addrlen);
 	if (res < 0) {
 		printf("Unable to resume simulation\n");
 	}
@@ -1549,19 +1549,19 @@ void startSim(void)
  */
 
 static char usage[] =
-"\n"
-"newSim [#items [#customers [speed [verbosity]]]]\n"
-"                       - open store\n"
-"killSim                - close store and clean up\n"
-"stopSim                - pause simulation\n"
-"startSim               - unpause simulation\n"
-"newItem [item [count]] - create item (repeat as specified)\n"
-"newCust [item [count]] - create customer for item (repeat as specified)\n"
-"helpSim                - display this menu\n"
-"\n"
-"Argument missing or 0 => use default value; argument < 0 => disable\n"
-"\n"
-;
+        "\n"
+        "newSim [#items [#customers [speed [verbosity]]]]\n"
+        "                       - open store\n"
+        "killSim                - close store and clean up\n"
+        "stopSim                - pause simulation\n"
+        "startSim               - unpause simulation\n"
+        "newItem [item [count]] - create item (repeat as specified)\n"
+        "newCust [item [count]] - create customer for item (repeat as specified)\n"
+        "helpSim                - display this menu\n"
+        "\n"
+        "Argument missing or 0 => use default value; argument < 0 => disable\n"
+        "\n"
+        ;
 
 void helpSim(void)
 {
@@ -1585,12 +1585,12 @@ int main(int argc, char **argv)
 		eNewItemCommand,
 		eNewCustCommand
 	};
-	
+
 	struct cmdInfo {
 		int value;	/* command value */
 		char *text;	/* command name */
 		int maxArgs;	/* maximum # of arguments (including name) */
-		};
+	};
 
 	static struct cmdInfo cmdList[] = {
 		{ eNewSimCommand, "newSim", 5 },
@@ -1600,8 +1600,8 @@ int main(int argc, char **argv)
 		{ eNewItemCommand, "newItem", 3 },
 		{ eNewCustCommand, "newCust", 3 },
 		{ -1, NULL, -1 }
-		};
-	
+	};
+
 	int cmd;
 
 	/* Find out which command was called */
@@ -1642,12 +1642,12 @@ int main(int argc, char **argv)
 
 	case eNewItemCommand:
 		newItem((argc > 1) ? atoi(argv[1]) : 0,
-			(argc > 2) ? atoi(argv[2]) : 0);
+		        (argc > 2) ? atoi(argv[2]) : 0);
 		break;
 
 	case eNewCustCommand:
 		newCust((argc > 1) ? atoi(argv[1]) : 0,
-			(argc > 2) ? atoi(argv[2]) : 0);
+		        (argc > 2) ? atoi(argv[2]) : 0);
 		break;
 	}
 

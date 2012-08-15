@@ -3,33 +3,33 @@
  * tipc_ts_common.c
  *
  * Short description: Portable TIPC Test Suite -- common client+server routines
- * 
+ *
  * ------------------------------------------------------------------------
  *
  * Copyright (c) 2006,2008,2010 Wind River Systems
  * All rights reserved.
- * Redistribution and use in source and binary forms, with or without 
+ * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * Redistributions of source code must retain the above copyright notice, this 
+ * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright notice, 
- * this list of conditions and the following disclaimer in the documentation 
+ * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
  * and/or other materials provided with the distribution.
- * Neither the names of the copyright holders nor the names of its 
- * contributors may be used to endorse or promote products derived from this 
+ * Neither the names of the copyright holders nor the names of its
+ * contributors may be used to endorse or promote products derived from this
  * software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * ------------------------------------------------------------------------
@@ -42,8 +42,8 @@
 
 
 /**
- * nameList - 	list of all test names, must be in sync with: 
- * 		serverList[] in tipc_ts_server.c and 
+ * nameList - 	list of all test names, must be in sync with:
+ * 		serverList[] in tipc_ts_server.c and
  * 		clientList[] in tipc_ts_client.c and
  * 		TS_NUM in tipc_ts.h
  */
@@ -70,9 +70,9 @@ TSTESTNAME nameList[] = {
 	{ts_blast_seqpacket, "blaster/blastee (SOCK_SEQPACKET)"},
 	{ts_blast_stream, "blaster/blastee (SOCK_STREAM)"},
 #endif
-	{ts_lastSanityTest, ""},        
+	{ts_lastSanityTest, ""},
 	{ts_stress_rdm,"continuous SOCK_RDM"},
-	{ts_lastStressTest, ""} 
+	{ts_lastStressTest, ""}
 };
 
 #define NAMELIST_SIZE  sizeof(nameList)/sizeof(nameList[0])
@@ -82,16 +82,15 @@ TSTESTNAME nameList[] = {
  */
 char * testName
 (
-int test	 /* number of the test */
+        int test	 /* number of the test */
 )
 {
 	int testIndex;  /* loop index to traverse the nameList */
-	
-	for (testIndex =0; testIndex < NAMELIST_SIZE; testIndex++)
-		{
-			if (nameList[testIndex].testNum == test)
-					return(nameList[testIndex].name);
-		}
+
+	for (testIndex =0; testIndex < NAMELIST_SIZE; testIndex++) {
+		if (nameList[testIndex].testNum == test)
+			return(nameList[testIndex].name);
+	}
 	return("");
 }
 
@@ -99,9 +98,9 @@ int test	 /* number of the test */
  * failTest - indicates the completion of an unsuccessful test
  */
 
-void failTest 
+void failTest
 (
-char *reason  /* string indicating why the failure occured */
+        char *reason  /* string indicating why the failure occured */
 )
 {
 	char failString[150]; /* string for the failure message */
@@ -115,15 +114,15 @@ char *reason  /* string indicating why the failure occured */
 }
 
 /**
- * makeArray - create test vector with a specified pattern of numbers 
+ * makeArray - create test vector with a specified pattern of numbers
  */
 
-void makeArray 
+void makeArray
 (
-char *theArray,	  /* pointer to the array to fill in */
-int size,	  	  /* size of the array */
-int start,	  	  /* where the message starts */
-int end		      /* where the message ends */
+        char *theArray,	  /* pointer to the array to fill in */
+        int size,	  	  /* size of the array */
+        int start,	  	  /* where the message starts */
+        int end		      /* where the message ends */
 )
 {
 	int curNum;       /* current index to the message array */
@@ -132,34 +131,30 @@ int end		      /* where the message ends */
 
 	/* Validate arguments */
 
-	if ((start < 0) || (start > 255) || (start > end))
-		{
+	if ((start < 0) || (start > 255) || (start > end)) {
 		debug ("Using default data start (0)\n");
 		start = 0;
-		}
-	if ((end < 0) || (end > 255))
-		{
+	}
+	if ((end < 0) || (end > 255)) {
 		debug ("Using default data end (255)\n");
 		end = 255;
-		}
+	}
 
 	/* Generate short (or null) message & return if no room for header */
 
-	if (size < 7)
-		{
+	if (size < 7) {
 		for (i = 0; i < size; i++)
 			theArray[i] = (char)i;
 		return;
-		}
+	}
 
 	/* Create message descriptor portion of header */
 
 	curNum = size;
-	for (i = 0; i < 4; i++)
-		{
+	for (i = 0; i < 4; i++) {
 		theArray[i] = (char)(curNum & 0xFF);
 		curNum >>= 8;
-		}
+	}
 	theArray[4] = (char)start;
 	theArray[5] = (char)end;
 
@@ -173,25 +168,24 @@ int end		      /* where the message ends */
 	/* Fill rest of array with specified data pattern */
 
 	curNum = start;
-	for (i = 7; i < size; i++)
-		{
+	for (i = 7; i < size; i++) {
 		theArray[i] = (char)curNum;
 		curNum++;
 		if (curNum > end)
 			curNum = start;
-		}
+	}
 }
 
 /**
- * checkArray - validates the integrity of a test vector 
+ * checkArray - validates the integrity of a test vector
  *
  * RETURNS: # of errors found
  */
 
-int checkArray 
+int checkArray
 (
-char *theArray,	  /* the message to check */
-int arraySize	  /* the size of the message */
+        char *theArray,	  /* the message to check */
+        int arraySize	  /* the size of the message */
 )
 {
 	int theSize;     /* the size of the message to validate */
@@ -204,18 +198,16 @@ int arraySize	  /* the size of the message */
 
 	/* Check short (or null) message & return */
 
-	if (arraySize < 7)
-		{
+	if (arraySize < 7) {
 		errCount = 0;
-		for (i = 0; i < arraySize; i++)
-			{
+		for (i = 0; i < arraySize; i++) {
 			if ((unsigned char)theArray[i] != i)
 				errCount++;
-			}
+		}
 		if (errCount > 0)
 			debug ("Not a valid %d byte message\n", arraySize);
 		return errCount;
-		}
+	}
 
 	/* Validate header */
 
@@ -223,28 +215,25 @@ int arraySize	  /* the size of the message */
 	for (i = 0; i < 6; i++)
 		errCheck ^= theArray[i];
 	errCheck ^= 0xFF;
-	if ((errCheck ^ theArray[6]) & 0xFF)
-		{
+	if ((errCheck ^ theArray[6]) & 0xFF) {
 		printf ("Header checksum error\n");
 		for (i = 0; i <= 6; i++)
 			debug ("Header[%d]=0x%0x\n", i, theArray[i]);
 		debug ("Computed checksum=0x%0x\n", errCheck);
 		return 1;
-		}
+	}
 
 	/* Validate message size */
 
 	theSize = 0;
-	for (i = 4; i > 0; )
-		{
+	for (i = 4; i > 0; ) {
 		theSize <<= 8;
 		theSize |= (unsigned char)theArray[--i];
-		}
-	if (theSize != arraySize)
-		{
+	}
+	if (theSize != arraySize) {
 		printf ("Message size mismatch\n");
 		return 1;
-		}
+	}
 
 	start = (unsigned char)theArray[4];
 	end = (unsigned char)theArray[5];
@@ -253,17 +242,15 @@ int arraySize	  /* the size of the message */
 
 	errCount = 0;
 	curNum = start;
-	for (i = 7; i < theSize; i++)
-		{
-		if (curNum != (unsigned char)theArray[i])
-			{
+	for (i = 7; i < theSize; i++) {
+		if (curNum != (unsigned char)theArray[i]) {
 			if (++errCount == 1)
 				debug ("First data mismatch at offset %d\n", i);
-			}
+		}
 		curNum++;
 		if (curNum > end)
 			curNum = start;
-		}
+	}
 	return errCount;
 }
 
@@ -272,9 +259,9 @@ int arraySize	  /* the size of the message */
  * acceptSocketTIPC - accepts a socket connection (ignores peer address)
  */
 
-int acceptSocketTIPC 
+int acceptSocketTIPC
 (
-int sockfd_L		/* socket to use */
+        int sockfd_L		/* socket to use */
 )
 {
 	struct sockaddr_tipc addr;    /* socket address structure not filled in */
@@ -292,9 +279,9 @@ int sockfd_L		/* socket to use */
  * listenSocketTIPC - allows socket to listen for connections sets max queue length to 5
  */
 
-void listenSocketTIPC 
+void listenSocketTIPC
 (
-int sockfd_S  /* socket to use */
+        int sockfd_S  /* socket to use */
 )
 {
 	if (listen (sockfd_S, 5) <0)
@@ -304,35 +291,35 @@ int sockfd_S  /* socket to use */
 /**
  * sendtoSocketBuffTIPC - sends supplied messages via a connectionless socket
  *
- * "sendErrorTarget" specifies expected number of send() errors; 
+ * "sendErrorTarget" specifies expected number of send() errors;
  * if < 0, then any number of errors is OK
  */
 
-void sendtoSocketBuffTIPC 
+void sendtoSocketBuffTIPC
 (
-int sockfd,				/* socket to be used */
-struct sockaddr_tipc *addr,	/* address of the socket */
-char *msgArea,				/* pointer to the message to be sent */
-int numTimes,				/* number of times to send the message */
-int msgSize,				/* size of the message to be sent */
-int sendErrorTarget			/* number of expected errors */
+        int sockfd,				/* socket to be used */
+        struct sockaddr_tipc *addr,	/* address of the socket */
+        char *msgArea,				/* pointer to the message to be sent */
+        int numTimes,				/* number of times to send the message */
+        int msgSize,				/* size of the message to be sent */
+        int sendErrorTarget			/* number of expected errors */
 )
 {
 	int sendErrorCount;		 /* local count of the errors */
 	int i = 0;				 /* loop variable */
 	int res;				 /* return code */
 	char failStr[100]; 	 	 /* string for the failure message */
-	
+
 	if ((numTimes == 0) || (msgSize == 0))
 		return;
 
 	sendErrorCount = 0;
 
 	while (i < numTimes) {
-        
-		res = sendto (sockfd, msgArea, msgSize, 0, 
-			      (struct sockaddr *)addr, sizeof (*addr));
-		debug("sent a message %d\n",i);        
+
+		res = sendto (sockfd, msgArea, msgSize, 0,
+		              (struct sockaddr *)addr, sizeof (*addr));
+		debug("sent a message %d\n",i);
 
 		if (res != msgSize)
 			sendErrorCount++;
@@ -351,17 +338,17 @@ int sendErrorTarget			/* number of expected errors */
 /**
  * sendtoSocketTIPC - sends messages via a connectionless socket
  *
- * "sendErrorTarget" specifies expected number of send() errors; 
+ * "sendErrorTarget" specifies expected number of send() errors;
  * if < 0, then any number of errors is OK
  */
 
-void sendtoSocketTIPC 
+void sendtoSocketTIPC
 (
-int sockfd,				/* socket to be used */
-struct sockaddr_tipc *addr,	/* address of the socket */
-int numTimes,				/* number of times to send the message */
-int msgSize,				/* size of the message to be sent */
-int sendErrorTarget			/* number of expected errors */
+        int sockfd,				/* socket to be used */
+        struct sockaddr_tipc *addr,	/* address of the socket */
+        int numTimes,				/* number of times to send the message */
+        int msgSize,				/* size of the message to be sent */
+        int sendErrorTarget			/* number of expected errors */
 )
 {
 	char *msgArea;	  /* local pointer to the message */
@@ -375,35 +362,34 @@ int sendErrorTarget			/* number of expected errors */
 
 	makeArray (msgArea, msgSize, 0, 255);
 	sendtoSocketBuffTIPC (sockfd, addr, msgArea, numTimes, msgSize,
-			      sendErrorTarget);
+	                      sendErrorTarget);
 	free (msgArea);
 }
 
 /**
- * anc_data_type - utility to get the anc type as a string  
+ * anc_data_type - utility to get the anc type as a string
  */
 
-void anc_data_type 
+void anc_data_type
 (
-char * str,  /* string with type of ancillary data */
-int type     /* anc type */
+        char * str,  /* string with type of ancillary data */
+        int type     /* anc type */
 )
 {
-	switch (type)
-		{
-		case TIPC_DESTNAME:
-			strcpy (str, "TIPC_DESTNAME");
-			break;
-		case TIPC_ERRINFO:
-			strcpy (str, "TIPC_ERRINFO");
-			break;
-		case TIPC_RETDATA:
-			strcpy (str, "TIPC_RETDATA");
-			break;
-		default:
-			strcpy (str, "UNKNOWN!!");
-			break;
-		}
+	switch (type) {
+	case TIPC_DESTNAME:
+		strcpy (str, "TIPC_DESTNAME");
+		break;
+	case TIPC_ERRINFO:
+		strcpy (str, "TIPC_ERRINFO");
+		break;
+	case TIPC_RETDATA:
+		strcpy (str, "TIPC_RETDATA");
+		break;
+	default:
+		strcpy (str, "UNKNOWN!!");
+		break;
+	}
 }
 
 /**
@@ -412,19 +398,18 @@ int type     /* anc type */
 
 void setOption
 (
-int sockfd,	   /* socket to use */
-int opt,	   /* option to set */
-int value	   /* value to set */
+        int sockfd,	   /* socket to use */
+        int opt,	   /* option to set */
+        int value	   /* value to set */
 )
 {
 	char failString[50]; /* string for failure return code */
 
-	if (setsockopt (sockfd, SOL_TIPC, opt, 
-			(char*)&value, sizeof (value)))
-		{
+	if (setsockopt (sockfd, SOL_TIPC, opt,
+	                (char*)&value, sizeof (value))) {
 		sprintf(failString,"unable to set option %d to %d", opt, value);
 		failTest (failString);
-		}
+	}
 }
 
 /**
@@ -433,9 +418,9 @@ int value	   /* value to set */
 
 void getOption
 (
-int sockfd,    /* socket to use */
-int opt,       /* option to get */
-int *value     /* returned value */
+        int sockfd,    /* socket to use */
+        int opt,       /* option to get */
+        int *value     /* returned value */
 )
 {
 	char failString[50];  /* string for failure return code */
@@ -443,51 +428,49 @@ int *value     /* returned value */
 
 	size = sizeof(*value);
 
-	if (getsockopt (sockfd, SOL_TIPC, opt, (char*)value, &size))
-		{
+	if (getsockopt (sockfd, SOL_TIPC, opt, (char*)value, &size)) {
 		sprintf(failString,"unable to get option %d", opt);
 		failTest (failString);
-		}
+	}
 }
 
 
 /**
  * tipc_printaddr - print out a TIPC socket address in readable form
- * 
+ *
  * note will only print when debug enabled
  */
 
-void tipc_printaddr 
+void tipc_printaddr
 (
-struct sockaddr_tipc *addr     /* pointer to TIPC address structure */
+        struct sockaddr_tipc *addr     /* pointer to TIPC address structure */
 )
 {
 	debug ("%s:",
-		 (addr->family == AF_TIPC) ? "AF_TIPC" : "invalid family");
-	switch (addr->addrtype)
-		{
-		case TIPC_ADDR_ID:
-			debug ("ID=<%d.%d.%d>,%d",
-				 tipc_zone (addr->addr.id.node),
-				 tipc_cluster (addr->addr.id.node),
-				 tipc_node (addr->addr.id.node),
-				 addr->addr.id.ref);
-			break;
-		case TIPC_ADDR_NAME:
-			debug ("NAME=(%d,%d),%d",
-				 addr->addr.name.name.type, addr->addr.name.name.instance,
-				 addr->addr.name.domain);
-			break;
-		case TIPC_ADDR_NAMESEQ: 
-			/* case TIPC_ADDR_MCAST:  same value as TIPC_ADDR_NAMESEQ */
-			debug ("NAMESEQ=(%d,%d,%d)",
-				 addr->addr.nameseq.type, addr->addr.nameseq.lower,
-				 addr->addr.nameseq.upper);
-			break;
-		default:
-			printf ("invalid type");
-			break;
-		}
+	       (addr->family == AF_TIPC) ? "AF_TIPC" : "invalid family");
+	switch (addr->addrtype) {
+	case TIPC_ADDR_ID:
+		debug ("ID=<%d.%d.%d>,%d",
+		       tipc_zone (addr->addr.id.node),
+		       tipc_cluster (addr->addr.id.node),
+		       tipc_node (addr->addr.id.node),
+		       addr->addr.id.ref);
+		break;
+	case TIPC_ADDR_NAME:
+		debug ("NAME=(%d,%d),%d",
+		       addr->addr.name.name.type, addr->addr.name.name.instance,
+		       addr->addr.name.domain);
+		break;
+	case TIPC_ADDR_NAMESEQ:
+		/* case TIPC_ADDR_MCAST:  same value as TIPC_ADDR_NAMESEQ */
+		debug ("NAMESEQ=(%d,%d,%d)",
+		       addr->addr.nameseq.type, addr->addr.nameseq.lower,
+		       addr->addr.nameseq.upper);
+		break;
+	default:
+		printf ("invalid type");
+		break;
+	}
 
 	/* don't bother printing scope, since it is only used by bind() */
 }
@@ -498,9 +481,9 @@ struct sockaddr_tipc *addr     /* pointer to TIPC address structure */
  *
  */
 
-void setServerAddr 
+void setServerAddr
 (
-struct sockaddr_tipc *addr  /* pointer to address structure */
+        struct sockaddr_tipc *addr  /* pointer to address structure */
 )
 {
 	addr->family = AF_TIPC;
@@ -517,49 +500,48 @@ struct sockaddr_tipc *addr  /* pointer to address structure */
  *
  */
 
-void setServerAddrTo 
+void setServerAddrTo
 (
-struct sockaddr_tipc *addr,   /* pointer to address structure */
-int infoType,		      /* address type */
-int info1,		      /* address info 1 */
-int info2,		      /* address info 2 */
-int info3		      /* address info 3 */
+        struct sockaddr_tipc *addr,   /* pointer to address structure */
+        int infoType,		      /* address type */
+        int info1,		      /* address info 1 */
+        int info2,		      /* address info 2 */
+        int info3		      /* address info 3 */
 )
 {
 	addr->family = AF_TIPC;
 	addr->scope = TIPC_ZONE_SCOPE;
 	addr->addrtype = infoType;
 
-	switch (infoType)
-		{
-		case TIPC_ADDR_NAME:
-			addr->addr.name.name.type = info1;
-			addr->addr.name.name.instance = info2;
-			addr->addr.name.domain = info3;
-			break;
-		case TIPC_ADDR_NAMESEQ:
-			/* case TIPC_ADDR_MCAST:  same value as TIPC_ADDR_NAMESEQ */
-			addr->addr.nameseq.type = info1;
-			addr->addr.nameseq.lower = info2;
-			addr->addr.nameseq.upper = info3;
-			break;
-		case TIPC_ADDR_ID:
-			addr->addr.id.node = info1;
-			addr->addr.id.ref = info2; 
-			break;
-		default:  
-			failTest ("Invalid address type used in test");
-			break;
-		} 
+	switch (infoType) {
+	case TIPC_ADDR_NAME:
+		addr->addr.name.name.type = info1;
+		addr->addr.name.name.instance = info2;
+		addr->addr.name.domain = info3;
+		break;
+	case TIPC_ADDR_NAMESEQ:
+		/* case TIPC_ADDR_MCAST:  same value as TIPC_ADDR_NAMESEQ */
+		addr->addr.nameseq.type = info1;
+		addr->addr.nameseq.lower = info2;
+		addr->addr.nameseq.upper = info3;
+		break;
+	case TIPC_ADDR_ID:
+		addr->addr.id.node = info1;
+		addr->addr.id.ref = info2;
+		break;
+	default:
+		failTest ("Invalid address type used in test");
+		break;
+	}
 }
 
 /**
  * createSocketTIPC - create a TIPC socket
  */
 
-int createSocketTIPC 
+int createSocketTIPC
 (
-int type     /* socket type to create SOCK_STREAM/SOCK_SEQPACKET/SOCK_DGRAM/SOCK_RDM */
+        int type     /* socket type to create SOCK_STREAM/SOCK_SEQPACKET/SOCK_DGRAM/SOCK_RDM */
 )
 {
 	int sockfd_N; /* socket created */
@@ -575,17 +557,16 @@ int type     /* socket type to create SOCK_STREAM/SOCK_SEQPACKET/SOCK_DGRAM/SOCK
  * bindSocketTIPC - binds TIPC name to a socket
  */
 
-void bindSocketTIPC 
+void bindSocketTIPC
 (
-int sockfd_S,		       /* socket to use */
-struct sockaddr_tipc *addr     /* address to use */
+        int sockfd_S,		       /* socket to use */
+        struct sockaddr_tipc *addr     /* address to use */
 )
 {
-	if (bind (sockfd_S, (struct sockaddr *)addr, sizeof (*addr)) < 0)
-		{
+	if (bind (sockfd_S, (struct sockaddr *)addr, sizeof (*addr)) < 0) {
 		tipc_printaddr(addr);
 		failTest ("bind() error");
-		}
+	}
 
 }
 
@@ -595,11 +576,11 @@ struct sockaddr_tipc *addr     /* address to use */
  */
 
 
-LOCALS int acceptPeerSocketTIPC 
+LOCALS int acceptPeerSocketTIPC
 (
-int sockfd_L,			 /* socket to accept on */
-struct sockaddr_tipc *peerAddr,	 /* pointer to peer address */
-int *peerAddrLen		 /* pointer to peer address length */
+        int sockfd_L,			 /* socket to accept on */
+        struct sockaddr_tipc *peerAddr,	 /* pointer to peer address */
+        int *peerAddrLen		 /* pointer to peer address length */
 )
 {
 	int sockfd_N;                    /* socket from accept */
@@ -615,17 +596,16 @@ int *peerAddrLen		 /* pointer to peer address length */
  * connectSocketTIPC - connects to a socket
  */
 
-void connectSocketTIPC 
+void connectSocketTIPC
 (
-int sockfd_C,		    /* socket to use */
-struct sockaddr_tipc *addr  /* address to use */
+        int sockfd_C,		    /* socket to use */
+        struct sockaddr_tipc *addr  /* address to use */
 )
 {
-	if (connect (sockfd_C, (struct sockaddr *)addr, sizeof (*addr)) < 0)
-		{
+	if (connect (sockfd_C, (struct sockaddr *)addr, sizeof (*addr)) < 0) {
 		tipc_printaddr(addr);
 		failTest ("connect() error");
-		}
+	}
 
 }
 
@@ -633,9 +613,9 @@ struct sockaddr_tipc *addr  /* address to use */
  * closeSocketTIPC - closes specified socket
  */
 
-void closeSocketTIPC 
+void closeSocketTIPC
 (
-int sockfd_C		/* socket to close */
+        int sockfd_C		/* socket to close */
 )
 {
 	if (close (sockfd_C) < 0)
@@ -645,17 +625,17 @@ int sockfd_C		/* socket to close */
 /**
  * sendSocketBuffTIPC - sends the supplied messages via a connected socket
  *
- * "sendErrorTarget" specifies expected number of send() errors; 
+ * "sendErrorTarget" specifies expected number of send() errors;
  * if < 0, then any number of errors is OK
  */
 
-void sendSocketBuffTIPC 
+void sendSocketBuffTIPC
 (
-int sockfd,	    /* socket to send on */
-char *msgArea,	    /* pointer to the message to send */
-int numTimes,	    /* number of messages to send */
-int msgSize,	    /* size of messages to send */
-int sendErrorTarget /* number of send errors to expect */
+        int sockfd,	    /* socket to send on */
+        char *msgArea,	    /* pointer to the message to send */
+        int numTimes,	    /* number of messages to send */
+        int msgSize,	    /* size of messages to send */
+        int sendErrorTarget /* number of send errors to expect */
 )
 {
 	int sendErrorCount; /* error counter */
@@ -667,39 +647,36 @@ int sendErrorTarget /* number of send errors to expect */
 
 	sendErrorCount = 0;
 
-	for (i = 0; i < numTimes; i++)
-		{
+	for (i = 0; i < numTimes; i++) {
 		res = send (sockfd, msgArea, msgSize, 0);
 		debug("sent a message %d \n",i);
 
-		if (res != msgSize)
-			{
+		if (res != msgSize) {
 			sendErrorCount++;
 			debug("res = %d msgSize = %d\n",res, msgSize);
-			}
+		}
 
 
-		if ((sendErrorTarget >= 0) && (sendErrorCount != sendErrorTarget))
-			{
+		if ((sendErrorTarget >= 0) && (sendErrorCount != sendErrorTarget)) {
 			debug("sendErrorCount = %d sendErrorTarget = %d\n",sendErrorCount, sendErrorTarget);
 			failTest ("unexpected number of send() errors");
-			}
 		}
+	}
 }
 
 /**
  * sendSocketTIPC - sends messages via a connected socket
  *
- * "sendErrorTarget" specifies expected number of send() errors; 
+ * "sendErrorTarget" specifies expected number of send() errors;
  * if < 0, then any number of errors is OK
  */
 
-void sendSocketTIPC 
+void sendSocketTIPC
 (
-int sockfd,	    /* socket to send on */
-int numTimes,	    /* number of messages to send */
-int msgSize,	    /* size of the message to send */
-int sendErrorTarget /* number of send errors to expect */
+        int sockfd,	    /* socket to send on */
+        int numTimes,	    /* number of messages to send */
+        int msgSize,	    /* size of the message to send */
+        int sendErrorTarget /* number of send errors to expect */
 )
 {
 	char *msgArea;      /*  */
@@ -723,7 +700,7 @@ int sendErrorTarget /* number of send errors to expect */
  * "numTimes" specifies expected number of received messages;
  * if < 0, then any number of messages is OK (quits if connection closed)
  *
- * "recvErrorTarget" specifies expected number of recv() errors; 
+ * "recvErrorTarget" specifies expected number of recv() errors;
  * if < 0, then any number of errors is OK
  *
  * "checkErrorTarget" specifies expected number of corrupted messages;
@@ -733,13 +710,13 @@ int sendErrorTarget /* number of send errors to expect */
  *
  */
 
-void recvSocketTIPC 
+void recvSocketTIPC
 (
-int sockfd,	      /* socket to receive on */
-int numTimes,	      /* number of messages to receive */
-int maxSize,	      /* size of the messages to receive */
-int recvErrorTarget,  /* number of recv errors to expect */
-int checkErrorTarget  /* number of check errors to expect */
+        int sockfd,	      /* socket to receive on */
+        int numTimes,	      /* number of messages to receive */
+        int maxSize,	      /* size of the messages to receive */
+        int recvErrorTarget,  /* number of recv errors to expect */
+        int checkErrorTarget  /* number of check errors to expect */
 )
 {
 	char *msgArea;        /* pointer to the message area to be allocated */
@@ -751,35 +728,30 @@ int checkErrorTarget  /* number of check errors to expect */
 		return;
 
 	msgArea = (char*)malloc (maxSize);	/* currently only call free for the success path */
-										/* failure path results in application being killed */
+	/* failure path results in application being killed */
 	if (msgArea == NULL)
 		failTest ("unable to allocate receive buffer");
 
 	recvErrorCount = 0;
 	checkErrorCount = 0;
 
-	while ((numTimes < 0) || (numTimes-- != 0))
-		{
+	while ((numTimes < 0) || (numTimes-- != 0)) {
 		res = recv (sockfd, msgArea, maxSize, MSG_WAITALL);
-		debug("got a message %d\n",numTimes);        
-		
-		if (res == 0)
-			{
+		debug("got a message %d\n",numTimes);
+
+		if (res == 0) {
 			if (numTimes < 0)
-                break;
+				break;
 			else if (numTimes >= 0)
 				failTest ("recv() returned unexpected disconnect");
-			}
-		if (res < 0)
-			{
+		}
+		if (res < 0) {
 			recvErrorCount++;
 			checkErrorCount++;
-			}
-		else if ((checkErrorTarget >= 0) && checkArray (msgArea, res) != 0)
-			{
+		} else if ((checkErrorTarget >= 0) && checkArray (msgArea, res) != 0) {
 			checkErrorCount++;
-			}
 		}
+	}
 
 	if ((recvErrorTarget >= 0) && (recvErrorCount != recvErrorTarget))
 		failTest ("unexpected number of recv() errors");
@@ -793,9 +765,9 @@ int checkErrorTarget  /* number of check errors to expect */
  * sendSyncTIPC - sends a synchronization signal & waits for acknowledgement
  */
 
-void sendSyncTIPC 
+void sendSyncTIPC
 (
-int sigInstance		  /* sync number to publish */
+        int sigInstance		  /* sync number to publish */
 )
 {
 	int sockfd_R;               /* socket used for signal acknowledement */
@@ -816,9 +788,9 @@ int sigInstance		  /* sync number to publish */
  * recvSyncTIPC - waits for synchronization signal & generates acknowledgement
  */
 
-void recvSyncTIPC 
+void recvSyncTIPC
 (
-int sigInstance				/* sync number to publish */
+        int sigInstance				/* sync number to publish */
 )
 {
 	int sockfd_S;               /* socket used for signal detection */
@@ -860,7 +832,7 @@ int sigInstance				/* sync number to publish */
 
 	setServerAddrTo (&addr, TIPC_ADDR_NAME, TS_SYNCRO_TYPE, sigInstance, 0);
 	if (sendto (sockfd_R, (caddr_t)&subscr, 1, 0,
-			(struct sockaddr *)&addr, sizeof (addr)) != 1)
+	                (struct sockaddr *)&addr, sizeof (addr)) != 1)
 		failTest ("can't acknowledge synchronization signal");
 
 	closeSocketTIPC (sockfd_R);
@@ -883,9 +855,9 @@ int sigInstance				/* sync number to publish */
  * getServerAddr - get port id address of regression test server
  */
 
-void getServerAddr 
+void getServerAddr
 (
-struct sockaddr_tipc *addr  /* pointer to address structure */
+        struct sockaddr_tipc *addr  /* pointer to address structure */
 )
 {
 	int sockfd_X;               /* socket */
@@ -916,44 +888,43 @@ struct sockaddr_tipc *addr  /* pointer to address structure */
 	closeSocketTIPC (sockfd_X);
 
 	setServerAddrTo (addr, TIPC_ADDR_ID,
-			 ntohl(event.port.node), ntohl(event.port.ref), 0);
+	                 ntohl(event.port.node), ntohl(event.port.ref), 0);
 }
 
 /**
- * typeString - return a string for the socket type 
+ * typeString - return a string for the socket type
  */
-char * typeString 
+char * typeString
 (
-const int a_type, /* index of socket type from  common_test_socketOptions() */
-char * a_buffer	  /* string for the socket name */
+        const int a_type, /* index of socket type from  common_test_socketOptions() */
+        char * a_buffer	  /* string for the socket name */
 )
 {
-	switch (a_type)
-		{
-		case 0:
-			strcpy (a_buffer ,"SOCK_STREAM");
-			break;
-		case 1:
-			strcpy (a_buffer ,"SOCK_SEQPACKET");
-			break;
-		case 2:
-			strcpy (a_buffer ,"SOCK_RDM");
-			break;
-		case 3:
-			strcpy (a_buffer ,"SOCK_DGRAM");
-			break;
-		}
+	switch (a_type) {
+	case 0:
+		strcpy (a_buffer ,"SOCK_STREAM");
+		break;
+	case 1:
+		strcpy (a_buffer ,"SOCK_SEQPACKET");
+		break;
+	case 2:
+		strcpy (a_buffer ,"SOCK_RDM");
+		break;
+	case 3:
+		strcpy (a_buffer ,"SOCK_DGRAM");
+		break;
+	}
 	return a_buffer;
 }
 
 /**
- * common_test_socketOptions - test the socket options on both the client and server 
+ * common_test_socketOptions - test the socket options on both the client and server
  */
 
 void common_test_socketOptions(void)
 {
 	static const int socket_type[4] =       /* the 4 socket types being tested in an array */
-		{ SOCK_STREAM, SOCK_SEQPACKET, SOCK_RDM, SOCK_DGRAM };
+	{ SOCK_STREAM, SOCK_SEQPACKET, SOCK_RDM, SOCK_DGRAM };
 
 	static const int MIN_SOCK_INDEX = 0;      /* used to skip stream if required for older versions */
 	static const int MAX_CONN_SOCK_INDEX = 1; /* last connection orientated socket type */
@@ -970,188 +941,160 @@ void common_test_socketOptions(void)
 	int n_opt;                               /* value for option */
 
 	info("starting common_test_socketOptions\n");
-	for (ii = MIN_SOCK_INDEX ;ii <= MAX_SOCK_INDEX ;ii++)
-		{
+	for (ii = MIN_SOCK_INDEX ; ii <= MAX_SOCK_INDEX ; ii++) {
 		so[ii] = createSocketTIPC (socket_type[ii]);
-		}
+	}
 
 	setServerAddr(&saddr);
 
 
-	for (ii = 0 ;ii < MIN_SOCK_INDEX ;ii++)
-		{
+	for (ii = 0 ; ii < MIN_SOCK_INDEX ; ii++) {
 		printf ("Bypassing all tests for %s\n" ,typeString (ii ,buf));
-		}
+	}
 	debug ("Testing default values... \n");
 
-	for (ii = MIN_SOCK_INDEX ;ii <= MAX_SOCK_INDEX ;ii++)
-		{
+	for (ii = MIN_SOCK_INDEX ; ii <= MAX_SOCK_INDEX ; ii++) {
 
 		getOption (so[ii] ,TIPC_IMPORTANCE,&n_opt);
 
-		if (n_opt != TIPC_LOW_IMPORTANCE)
-			{
+		if (n_opt != TIPC_LOW_IMPORTANCE) {
 			sprintf(failString,"FAILED : wrong default TIPC_IMPORTANCE "
-				"for socket type %s (%d)"
-				,typeString (ii, buf) ,n_opt);
+			        "for socket type %s (%d)"
+			        ,typeString (ii, buf) ,n_opt);
 			failTest(failString);
-			}
 		}
+	}
 	info("TIPC_IMPORTANCE defaults ... PASSED\n");
 
-	for (ii = MIN_SOCK_INDEX ;ii <= MAX_SOCK_INDEX ;ii++)
-		{
+	for (ii = MIN_SOCK_INDEX ; ii <= MAX_SOCK_INDEX ; ii++) {
 		getOption (so[ii], TIPC_SRC_DROPPABLE, &n_opt);
-		if ((int)n_opt != (ii < 3 ? 0 : 1))
-			{
+		if ((int)n_opt != (ii < 3 ? 0 : 1)) {
 			sprintf (failString,"FAILED : wrong default SRC_DROPPABLE "
-				 "for socket type %s (%d)"
-				 ,typeString (ii ,buf) ,n_opt);
+			         "for socket type %s (%d)"
+			         ,typeString (ii ,buf) ,n_opt);
 			failTest (failString);
-			}
 		}
+	}
 	info("TIPC_SRC_DROPPABLE defaults ... PASSED\n");
 
-	for (ii = MIN_SOCK_INDEX ;ii <= MAX_SOCK_INDEX ;ii++)
-		{
+	for (ii = MIN_SOCK_INDEX ; ii <= MAX_SOCK_INDEX ; ii++) {
 
 		getOption (so[ii], TIPC_DEST_DROPPABLE,&n_opt);
-		if ((int)n_opt != (ii < 2 ? 0 : 1))
-			{
+		if ((int)n_opt != (ii < 2 ? 0 : 1)) {
 			sprintf (failString,"FAILED : wrong default DEST_DROPPABLE "
-				 "for socket type %s (%d)"
-				 ,typeString (ii, buf) ,n_opt);
+			         "for socket type %s (%d)"
+			         ,typeString (ii, buf) ,n_opt);
 			failTest (failString);
-			}
 		}
+	}
 	info("TIPC_DEST_DROPPABLE defaults ... PASSED\n");
-	
-	for (ii = MIN_SOCK_INDEX ;ii <= MAX_SOCK_INDEX ;ii++)
-		{
+
+	for (ii = MIN_SOCK_INDEX ; ii <= MAX_SOCK_INDEX ; ii++) {
 
 		getOption (so[ii], TIPC_CONN_TIMEOUT ,&n_opt);
-		
-		if (n_opt != 8000)
-			{
+
+		if (n_opt != 8000) {
 			sprintf (failString,"FAILED : wrong default TIPC_CONN_TIMEOUT "
-				 "for socket type %s (%d)"
-				 ,typeString (ii, buf) ,n_opt);
+			         "for socket type %s (%d)"
+			         ,typeString (ii, buf) ,n_opt);
 			failTest (failString);
-			}
 		}
+	}
 	info("TIPC_CONN_TIMEOUT defaults ... PASSED\n");
 
 	/* only do the next test for the connection orientated sockets */
-	
+
 	debug ("Testing setting of values then fetching them back... \n");
 
-	for (ii = MIN_SOCK_INDEX ;ii <= MAX_SOCK_INDEX ;ii++)
-		{
-		for (jj = TIPC_LOW_IMPORTANCE ;jj < TIPC_CRITICAL_IMPORTANCE ;jj++)
-			{
+	for (ii = MIN_SOCK_INDEX ; ii <= MAX_SOCK_INDEX ; ii++) {
+		for (jj = TIPC_LOW_IMPORTANCE ; jj < TIPC_CRITICAL_IMPORTANCE ; jj++) {
 
 			setOption (so[ii] ,TIPC_IMPORTANCE, jj);
 			getOption (so[ii] ,TIPC_IMPORTANCE, &n_opt);
-			if (n_opt != jj)
-				{
+			if (n_opt != jj) {
 				sprintf (failString,"FAILED : wrong TIPC_IMPORTANCE "
-					 "for socket type %s (expected %d, got %d)"
-					 ,typeString (ii,buf) ,jj ,n_opt);
+				         "for socket type %s (expected %d, got %d)"
+				         ,typeString (ii,buf) ,jj ,n_opt);
 				failTest (failString);
-				}
 			}
 		}
-	info("TIPC_IMPORTANCE R/W ... PASSED\n");   
+	}
+	info("TIPC_IMPORTANCE R/W ... PASSED\n");
 
-	for (ii = MIN_SOCK_INDEX ;ii <= MAX_SOCK_INDEX ;ii++)
-		{
-		if (socket_type[ii] != SOCK_STREAM) /* not supported for stream */
-			{
-			for (jj = 0 ;jj < 2 ;jj++)
-				{
-	
+	for (ii = MIN_SOCK_INDEX ; ii <= MAX_SOCK_INDEX ; ii++) {
+		if (socket_type[ii] != SOCK_STREAM) { /* not supported for stream */
+			for (jj = 0 ; jj < 2 ; jj++) {
+
 				setOption (so[ii] ,TIPC_SRC_DROPPABLE, jj);
 				getOption (so[ii] ,TIPC_SRC_DROPPABLE,&n_opt);
-				if (n_opt != jj)
-					{
+				if (n_opt != jj) {
 					sprintf (failString,"FAILED : wrong TIPC_SRC_DROPPABLE "
-						 "for socket type %s (expected %d, got %d)"
-						 ,typeString (ii,buf) ,jj ,n_opt);
+					         "for socket type %s (expected %d, got %d)"
+					         ,typeString (ii,buf) ,jj ,n_opt);
 					failTest (failString);
-					}
 				}
 			}
 		}
-	info("TIPC_SRC_DROPPABLE R/W ... PASSED\n");    
+	}
+	info("TIPC_SRC_DROPPABLE R/W ... PASSED\n");
 
-	for (ii = MIN_SOCK_INDEX ;ii <= MAX_SOCK_INDEX ;ii++)
-		{
-		for (jj = 0 ;jj < 2 ;jj++)
-			{
+	for (ii = MIN_SOCK_INDEX ; ii <= MAX_SOCK_INDEX ; ii++) {
+		for (jj = 0 ; jj < 2 ; jj++) {
 
 			setOption (so[ii] ,TIPC_DEST_DROPPABLE, jj);
 			getOption (so[ii] ,TIPC_DEST_DROPPABLE, &n_opt);
-			if (n_opt != jj)
-				{
+			if (n_opt != jj) {
 				sprintf (failString,"FAILED : wrong TIPC_DEST_DROPPABLE "
-					 "for socket type %s (expected %d, got %d)"
-					 ,typeString (ii,buf) ,jj ,n_opt);
+				         "for socket type %s (expected %d, got %d)"
+				         ,typeString (ii,buf) ,jj ,n_opt);
 				failTest (failString);
-				}
 			}
 		}
-	info("TIPC_DEST_DROPPABLE R/W ... PASSED\n"); 
+	}
+	info("TIPC_DEST_DROPPABLE R/W ... PASSED\n");
 
-	for (ii = MIN_SOCK_INDEX ;ii <= MAX_SOCK_INDEX ;ii++)
-		{
+	for (ii = MIN_SOCK_INDEX ; ii <= MAX_SOCK_INDEX ; ii++) {
 		n_opt = 200; /* set to 200 milliseconds  default is 8 seconds*/
 		setOption (so[ii] ,TIPC_CONN_TIMEOUT, n_opt);
 		getOption (so[ii] ,TIPC_CONN_TIMEOUT, &n_opt);
-		if (n_opt != 200)
-			{
+		if (n_opt != 200) {
 			sprintf (failString,"FAILED : wrong TIPC_CONN_TIMEOUT "
-				 "for socket type %s (expected %d, got %d)"
-				 ,typeString (ii,buf) ,200 ,n_opt);
+			         "for socket type %s (expected %d, got %d)"
+			         ,typeString (ii,buf) ,200 ,n_opt);
 			failTest (failString);
-			}
 		}
+	}
 	info("TIPC_CONN_TIMEOUT R/W ... PASSED\n");
 
 	n_opt = 300;  /* wait 300 milliseconds  default is 8000 milliseconds*/
-	
-	for (ii = MIN_SOCK_INDEX ;ii <= MAX_CONN_SOCK_INDEX ;ii++)
-		{
+
+	for (ii = MIN_SOCK_INDEX ; ii <= MAX_CONN_SOCK_INDEX ; ii++) {
 		sol = createSocketTIPC(socket_type[ii]);
 
 		bindSocketTIPC (sol, &saddr);
 
 		setOption(so[ii] ,TIPC_CONN_TIMEOUT, n_opt);
 		/* connect on a socket that has no listener and it should timeout */
-		
-		if (0 == connect (so[ii] ,(struct sockaddr *)&saddr, sizeof (saddr)))
-			{
+
+		if (0 == connect (so[ii] ,(struct sockaddr *)&saddr, sizeof (saddr))) {
 			sprintf(failString, "FAILED : connect didn't return error"
-				" on %s" ,typeString (ii ,buf));
+			        " on %s" ,typeString (ii ,buf));
 			failTest(failString);
-			}
-		else
-			{
-			if (ETIMEDOUT != errno)
-				{
+		} else {
+			if (ETIMEDOUT != errno) {
 				failTest ("FAILED : didn't time out");
-				}
 			}
+		}
 
 		closeSocketTIPC(sol);
-		}
-	info("TIPC_CONN_TIMEOUT timeout ... PASSED\n");    
+	}
+	info("TIPC_CONN_TIMEOUT timeout ... PASSED\n");
 
-	for (ii = MIN_SOCK_INDEX ;ii <= MAX_SOCK_INDEX ;ii++)
-		{
+	for (ii = MIN_SOCK_INDEX ; ii <= MAX_SOCK_INDEX ; ii++) {
 
 		closeSocketTIPC (so[ii]);
 
-		}   
+	}
 
 }
 
@@ -1160,11 +1103,11 @@ void common_test_socketOptions(void)
 #define MAX_STR		10
 
 /**
- * common_test_recvfrom - test the recvfrom code on both the client and server 
+ * common_test_recvfrom - test the recvfrom code on both the client and server
  */
-void common_test_recvfrom 
+void common_test_recvfrom
 (
-int syncId					/* id to use for the client server sync */
+        int syncId					/* id to use for the client server sync */
 )
 {
 
@@ -1174,8 +1117,8 @@ int syncId					/* id to use for the client server sync */
 	int so;                       /* socket to use */
 	int size;                     /* size of the received message */
 
-	
-	
+
+
 	setServerAddr (&addr);
 	so = createSocketTIPC (SOCK_RDM);
 	bindSocketTIPC(so, &addr);
@@ -1189,23 +1132,22 @@ int syncId					/* id to use for the client server sync */
 		sprintf (failStr,"common_test_recvfrom(): error receiving, size = %d\n", size);
 		failTest (failStr);
 
-	} else if (strcmp((const char *)THE_STRING, (const char *)&buffer) != 0)
-        {
+	} else if (strcmp((const char *)THE_STRING, (const char *)&buffer) != 0) {
 		sprintf (failStr,"common_test_recvfrom(): string mismatch got %s, wanted %s\n", buffer, THE_STRING);
-		failTest (failStr);               
-		}
+		failTest (failStr);
+	}
 	closeSocketTIPC (so);
 }
 
 
 
 /**
- * common_test_sendto - test the recvfrom code on both the client and server 
+ * common_test_sendto - test the recvfrom code on both the client and server
  */
-void common_test_sendto 
+void common_test_sendto
 (
-int syncId					/* id to use for the client server sync */
-) 
+        int syncId					/* id to use for the client server sync */
+)
 {
 
 	char failStr [50 + MAX_STR];  /* string for failure return code */
@@ -1216,11 +1158,11 @@ int syncId					/* id to use for the client server sync */
 	setServerAddr (&addr);
 	so = createSocketTIPC (SOCK_RDM);
 
-	recvSyncTIPC(syncId);			/* wait for the server to be ready */ 
+	recvSyncTIPC(syncId);			/* wait for the server to be ready */
 
 	size = sendto (so, THE_STRING, strlen(THE_STRING)+1, 0,
 
-		       (struct sockaddr *)&addr, sizeof (addr));
+	               (struct sockaddr *)&addr, sizeof (addr));
 
 	if ((strlen (THE_STRING) + 1) != size) {
 		sprintf (failStr,"common_test_sendto(): error sending, size = %d\n", size);

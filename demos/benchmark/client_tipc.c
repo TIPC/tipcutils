@@ -3,34 +3,34 @@
  * client_tipc.c
  *
  * Short description: TIPC benchmark demo (client side)
- * 
+ *
  * ------------------------------------------------------------------------
  *
  * Copyright (c) 2001-2005, Ericsson Research Canada
  * Copyright (c) 2004-2006, 2010-2011 Wind River Systems
  * All rights reserved.
- * Redistribution and use in source and binary forms, with or without 
+ * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * Redistributions of source code must retain the above copyright notice, this 
+ * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright notice, 
- * this list of conditions and the following disclaimer in the documentation 
+ * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
  * and/or other materials provided with the distribution.
- * Neither the names of the copyright holders nor the names of its 
- * contributors may be used to endorse or promote products derived from this 
+ * Neither the names of the copyright holders nor the names of its
+ * contributors may be used to endorse or promote products derived from this
  * software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * ------------------------------------------------------------------------
@@ -150,7 +150,7 @@ static unsigned long long elapsedmillis(struct timeval *from)
 		       (now.tv_usec - from->tv_usec) / 1000);
 	else
 		return((now.tv_sec - 1 - from->tv_sec) * 1000 +
-		       (now.tv_usec + 1000000 - from->tv_usec) / 1000); 
+		       (now.tv_usec + 1000000 - from->tv_usec) / 1000);
 }
 
 void clientmain(unsigned int client_id)
@@ -185,7 +185,7 @@ void clientmain(unsigned int client_id)
 	dest_addr.addr.name.name.instance = client_id;
 
 	if (bind(master_comm_sd, (struct sockaddr *)&dest_addr,
-		 sizeof(dest_addr))) {
+	                sizeof(dest_addr))) {
 		printf("Client %u: Failed to bind\n", client_id);
 		perror(NULL);
 		exit(1);
@@ -208,8 +208,8 @@ void clientmain(unsigned int client_id)
 		exit(1);
 	}
 
-	if (setsockopt(server_comm_sd, SOL_TIPC, TIPC_IMPORTANCE, 
-		       &imp, sizeof(imp)) != 0) {
+	if (setsockopt(server_comm_sd, SOL_TIPC, TIPC_IMPORTANCE,
+	                &imp, sizeof(imp)) != 0) {
 		printf("Client %u: Can't set socket options\n", client_id);
 		perror(NULL);
 		exit(1);
@@ -220,8 +220,8 @@ void clientmain(unsigned int client_id)
 	if (client_id & 1) {
 		dprintf("Client %u: sending setup ...\n", client_id);
 		if (sendto(server_comm_sd, &server_num, 4, 0,
-			   (struct sockaddr *)&server_addr,
-			   sizeof(server_addr)) <= 0) {
+		                (struct sockaddr *)&server_addr,
+		                sizeof(server_addr)) <= 0) {
 			printf("Client %u: sending setup failed\n", client_id);
 			perror(NULL);
 			exit(1);
@@ -229,8 +229,8 @@ void clientmain(unsigned int client_id)
 	} else {
 		dprintf("Client %u: doing connect ...\n", client_id);
 		if (connect(server_comm_sd,
-			    (struct sockaddr*)&server_addr,
-			    sizeof(server_addr)) < 0) {
+		                (struct sockaddr*)&server_addr,
+		                sizeof(server_addr)) < 0) {
 			printf("Client %u: connect failed\n", client_id);
 			perror(NULL);
 			exit(1);
@@ -245,7 +245,7 @@ void clientmain(unsigned int client_id)
 	dprintf("Client %u: getting ack from server ...\n", client_id);
 	wait_err = wait_for_msg(server_comm_sd);
 	if (wait_err) {
-		printf("Client %u: No acknowledgement from server (err=%u)\n", 
+		printf("Client %u: No acknowledgement from server (err=%u)\n",
 		       client_id, wait_err);
 		exit(1);
 	}
@@ -265,11 +265,11 @@ void clientmain(unsigned int client_id)
 	client_master_addr.addr.name.domain = 0;
 
 	dprintf("Client %u: Notifying master of connection to server\n",
-		client_id);
+	        client_id);
 	server_num = ntohl(server_num);
 	if (sendto(master_comm_sd, &server_num, 4, 0,
-		   (struct sockaddr *)&client_master_addr,
-		   sizeof(client_master_addr)) <= 0) {
+	                (struct sockaddr *)&client_master_addr,
+	                sizeof(client_master_addr)) <= 0) {
 		printf("Client %u: Unable to notify master\n", client_id);
 		perror(NULL);
 		exit(1);
@@ -322,14 +322,14 @@ void clientmain(unsigned int client_id)
 				perror(NULL);
 				exit(1);
 			}
-			
+
 			wait_err = wait_for_msg(server_comm_sd);
 			if (wait_err) {
 				printf("Client %u: no response from server "
 				       "(err=%u)\n", client_id, wait_err);
 				exit(1);
 			}
-			
+
 			msg_len = recv(server_comm_sd, buf, cmd.msg_size, 0);
 			if (msg_len != cmd.msg_size) {
 				printf("Client %u: invalid response from server,"
@@ -340,17 +340,16 @@ void clientmain(unsigned int client_id)
 			}
 
 			burst++;
-		}
-		while (counter--);
+		} while (counter--);
 
 		/* Command is done, tell client master */
 
-		dprintf("Client %u: reporting TASK_FINISHED to master\n", 
-			client_id);
+		dprintf("Client %u: reporting TASK_FINISHED to master\n",
+		        client_id);
 		cmd.client_no = client_id;
-		if (sendto(master_comm_sd, &cmd, sizeof(cmd), 0, 
-			   (struct sockaddr *)&client_master_addr,
-			   sizeof(client_master_addr)) <= 0) {
+		if (sendto(master_comm_sd, &cmd, sizeof(cmd), 0,
+		                (struct sockaddr *)&client_master_addr,
+		                sizeof(client_master_addr)) <= 0) {
 			printf("Client %u: failed to send TASK_FINISHED msg\n",
 			       client_id);
 			perror(NULL);
@@ -381,8 +380,8 @@ static void usage(char *app)
 {
 	fprintf(stderr, "Usage:\n");
 	fprintf(stderr,
-		"  %s [-l <lat mult>] [-t <tput mult>] [-n <num clients>]\n",
-		app);
+	        "  %s [-l <lat mult>] [-t <tput mult>] [-n <num clients>]\n",
+	        app);
 	fprintf(stderr, "\tlatency test multiplier defaults to 1\n");
 	fprintf(stderr, "\tthroughput test multiplier defaults to 1\n");
 	fprintf(stderr, "\tnumber of clients defaults to %d\n", DEFAULT_CLIENTS);
@@ -416,18 +415,18 @@ int main(int argc, char *argv[], char *dummy[])
 		case 'l':
 			l_mult = atoi(optarg);
 			if (l_mult < 0) {
-				fprintf(stderr, 
-					"Invalid latency multiplier [%d]\n",
-					l_mult);
+				fprintf(stderr,
+				        "Invalid latency multiplier [%d]\n",
+				        l_mult);
 				exit(1);
 			}
 			break;
 		case 't':
 			t_mult = atoi(optarg);
 			if (t_mult < 0) {
-				fprintf(stderr, 
-					"Invalid throughput multiplier [%d]\n",
-					t_mult);
+				fprintf(stderr,
+				        "Invalid throughput multiplier [%d]\n",
+				        t_mult);
 				exit(1);
 			}
 			break;
@@ -435,7 +434,7 @@ int main(int argc, char *argv[], char *dummy[])
 			req_clients = atoi(optarg);
 			if (req_clients <= 0) {
 				fprintf(stderr, "Invalid number of clients "
-					"[%d]\n", req_clients);
+				        "[%d]\n", req_clients);
 				exit(1);
 			}
 			break;
@@ -464,7 +463,7 @@ int main(int argc, char *argv[], char *dummy[])
 	dest_addr.addr.name.name.type = MCLIENT_NAME;
 	dest_addr.addr.name.name.instance = 0;
 	if (bind(client_master_sd, (struct sockaddr *)&dest_addr,
-		 sizeof(dest_addr))) {
+	                sizeof(dest_addr))) {
 		printf("Client master: Failed to bind\n");
 		perror(NULL);
 		exit(1);
@@ -503,7 +502,7 @@ int main(int argc, char *argv[], char *dummy[])
 	dprintf("Client master: waiting for confirmation from client 1\n");
 	wait_err = wait_for_msg(client_master_sd);
 	if (wait_err) {
-		printf("Client master: no confirmation from client 1 (err=%u)\n", 
+		printf("Client master: no confirmation from client 1 (err=%u)\n",
 		       wait_err);
 		exit(1);
 	}
@@ -530,14 +529,14 @@ int main(int argc, char *argv[], char *dummy[])
 		printf("Exchanging %llu messages of size %llu octets (burst size %llu)\n",
 		       cmd.msg_count, cmd.msg_size, cmd.burst_size);
 		dprintf("   client 1  <--> server %d\n", server_num);
-		
+
 		cmd.client_no = 1;
 		dest_addr.addr.name.name.instance = 1;
 		gettimeofday(&start_time, 0);
 
 		if (sendto(client_master_sd, &cmd, sizeof(cmd), 0,
-			   (struct sockaddr *)&dest_addr, sizeof(dest_addr))
-		    != sizeof(cmd)) {
+		                (struct sockaddr *)&dest_addr, sizeof(dest_addr))
+		                != sizeof(cmd)) {
 			printf("Client master: Can't send to client 1\n");
 			perror(NULL);
 			exit(1);
@@ -545,7 +544,7 @@ int main(int argc, char *argv[], char *dummy[])
 
 		wait_err = wait_for_msg(client_master_sd);
 		if (wait_err) {
-			printf("Client master: No result from client 1 (err=%u)\n", 
+			printf("Client master: No result from client 1 (err=%u)\n",
 			       wait_err);
 			exit(1);
 		}
@@ -577,7 +576,7 @@ end_latency:
 
 	if (!t_mult)
 		goto end_thruput;
-	
+
 	printf("Client master: Starting Throughput Benchmark\n");
 
 	/* Create remaining child clients */
@@ -600,7 +599,7 @@ end_latency:
 		}
 
 		dprintf ("Client master: waiting for confirmation "
-			 "from client %llu\n", num_clients);
+		         "from client %llu\n", num_clients);
 		wait_err = wait_for_msg(client_master_sd);
 		if (wait_err) {
 			printf("Client master: no confirmation from client %llu "
@@ -642,8 +641,8 @@ end_latency:
 			cmd.client_no = client_id;
 			dest_addr.addr.name.name.instance = client_id;
 			if (sendto(client_master_sd, &cmd, sizeof(cmd), 0,
-				   (struct sockaddr *)&dest_addr,
-				   sizeof(dest_addr)) != sizeof(cmd)) {
+			                (struct sockaddr *)&dest_addr,
+			                sizeof(dest_addr)) != sizeof(cmd)) {
 				printf("Client master: can't send to client %u\n",
 				       client_id);
 				perror(NULL);
@@ -654,7 +653,7 @@ end_latency:
 		for (client_id = 1; client_id <= num_clients; client_id++) {
 			struct client_cmd report;
 			int sz;
-			 
+
 			wait_err = wait_for_msg(client_master_sd);
 			if (wait_err) {
 				printf("Client master: result %u not received "
@@ -669,14 +668,14 @@ end_latency:
 				exit(1);
 			}
 			dprintf("Client master: received TASK_FINISHED "
-				"from client %u\n", report.client_no);
+			        "from client %u\n", report.client_no);
 		}
 
 		elapsed = elapsedmillis(&start_time);
 		msg_per_sec = (cmd.msg_count * num_clients * 1000)/elapsed;
 		procs = 1 + (server_node != own_node(client_master_sd));
 		printf("... took %llu ms "
-		       "(avg %llu msg/s/dir, %llu bits/s/dir)\n", 
+		       "(avg %llu msg/s/dir, %llu bits/s/dir)\n",
 		       elapsed, msg_per_sec/2, msg_per_sec*cmd.msg_size*8/2);
 		printf("    avg execution time (send+receive) %llu us/msg\n",
 		       (1000000 / (msg_per_sec * 2)) * procs);
@@ -696,8 +695,8 @@ end_thruput:
 	for (client_id = 1; client_id <= num_clients; client_id++) {
 		dest_addr.addr.name.name.instance = client_id;
 		if (sendto(client_master_sd, &cmd, sizeof(cmd), 0,
-			   (struct sockaddr *)&dest_addr,
-			   sizeof(dest_addr)) <= 0) {
+		                (struct sockaddr *)&dest_addr,
+		                sizeof(dest_addr)) <= 0) {
 			printf("Client master: failed to send TERMINATE message"
 			       " to client %u\n",
 			       client_id);

@@ -3,33 +3,33 @@
  * tipc_ts.h
  *
  * Short description: Portable TIPC Test Suite -- common declarations
- * 
+ *
  * ------------------------------------------------------------------------
  *
  * Copyright (c) 2006, Wind River Systems
  * All rights reserved.
- * Redistribution and use in source and binary forms, with or without 
+ * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * Redistributions of source code must retain the above copyright notice, this 
+ * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright notice, 
- * this list of conditions and the following disclaimer in the documentation 
+ * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
  * and/or other materials provided with the distribution.
- * Neither the names of the copyright holders nor the names of its 
- * contributors may be used to endorse or promote products derived from this 
+ * Neither the names of the copyright holders nor the names of its
+ * contributors may be used to endorse or promote products derived from this
  * software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * ------------------------------------------------------------------------
@@ -38,7 +38,7 @@
 #ifndef _PTTS_h_
 #define _PTTS_h_
 
- 
+
 /*
  * include OS-specific declarations (may be empty file if none are required)
  */
@@ -56,7 +56,7 @@
 /*
  * declare items used in test routines that must be supplied by wrapper code
  */
- 
+
 extern int verbose;
 
 static inline void killme(int exit_code);
@@ -66,7 +66,7 @@ static inline void killme(int exit_code);
  */
 #define TS_KILL_SERVER -1       /* Test Number sent to server to kill it */
 #define TS_INVALID_TEST -2      /* INVALID Test Number */
-				
+
 
 #define TS_MSGINC    600	/* message size increment value */
 #define TS_ANCBUFSZ  2048      	/* size of ancillary data area */
@@ -106,14 +106,14 @@ typedef void	(*VOIDFUNCPTR) ();	/* pfunction returning void */
 #define TS_FIRST_STRESS_TEST  1000	/* start of the stress tests */
 
 /**
- * TS_NUM - 	enumerated list of all valid tests, must be in sync with: 
- * 		nameList[] in tipc_ts_common.c and 
+ * TS_NUM - 	enumerated list of all valid tests, must be in sync with:
+ * 		nameList[] in tipc_ts_common.c and
  * 		clientList[] in tipc_ts_client.c and
- * 		serverList[] in tipc_ts_server.c 
+ * 		serverList[] in tipc_ts_server.c
  */
 
-enum TS_NUM {  
-	ts_doAllTests = 0,	  
+enum TS_NUM {
+	ts_doAllTests = 0,
 	/* add all of the sanity tests from here to ts_lastSanityTest */
 	ts_dgram = TS_FIRST_SANITY_TEST,
 	ts_rdm,
@@ -137,26 +137,24 @@ enum TS_NUM {
 #endif
 	ts_lastSanityTest, /* must be the last sanity test */
 	/* add all of the stress tests from here to ts_lastStressTest */
-	ts_stress_rdm = TS_FIRST_STRESS_TEST, 
-	ts_lastStressTest  /* must be last */ 	
-		
+	ts_stress_rdm = TS_FIRST_STRESS_TEST,
+	ts_lastStressTest  /* must be last */
+
 };
 
 /* this is the number of enumerated tests that we have defined */
 #define TS_NUMBER_OF_TESTS (ts_lastSanityTest + (ts_lastStressTest - TS_FIRST_STRESS_TEST))
 
-typedef struct 
-	{
+typedef struct {
 	enum TS_NUM testNum;
 	char name[50];
-		}TSTESTNAME;
-	
-typedef struct 
-	{
+} TSTESTNAME;
+
+typedef struct {
 	enum TS_NUM testNum;
 	VOIDFUNCPTR test;
-	}TSTEST;
-	
+} TSTEST;
+
 extern TSTESTNAME nameList[];
 extern TSTEST clientList[];
 extern TSTEST serverList[];

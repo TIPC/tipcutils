@@ -8,28 +8,28 @@
  *
  * Copyright (c) 2003, Ericsson Research Canada
  * All rights reserved.
- * Redistribution and use in source and binary forms, with or without 
+ * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * Redistributions of source code must retain the above copyright notice, this 
+ * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright notice, 
- * this list of conditions and the following disclaimer in the documentation 
+ * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
  * and/or other materials provided with the distribution.
- * Neither the name of Ericsson Research Canada nor the names of its 
- * contributors may be used to endorse or promote products derived from this 
+ * Neither the name of Ericsson Research Canada nor the names of its
+ * contributors may be used to endorse or promote products derived from this
  * software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * ------------------------------------------------------------------------
@@ -68,7 +68,7 @@ int main(int argc, char *argv[], char *dummy[])
 	listener_sd = socket (AF_TIPC, SOCK_SEQPACKET, 0);
 
 	if (0 != bind(listener_sd, (struct sockaddr *)&server_addr,
-		      sizeof(server_addr))) {
+	                sizeof(server_addr))) {
 		printf("Server: failed to bind port name\n");
 		exit(1);
 	}
@@ -92,21 +92,21 @@ int main(int argc, char *argv[], char *dummy[])
 		printf("\nServer: accept() returned\n");
 		fflush(stdout);
 		if (!fork()) {
-			printf ("Server process %d created \n", conn_count);    
+			printf ("Server process %d created \n", conn_count);
 			while (1) {
 				sz = recv(peer_sd, inbuf, BUF_SZ, 0);
 				if (sz == 0) {
-					printf("Server %d: client terminated normally\n", 
-					       conn_count);    
+					printf("Server %d: client terminated normally\n",
+					       conn_count);
 					exit(0);
 				}
 				if (sz < 0) {
 					printf("Server %d : client terminated abnormally\n",
-					       conn_count);    
+					       conn_count);
 					exit(1);
 				}
 				printf("Server %d: received msg \"%s\"\n",
-				       conn_count, inbuf);    
+				       conn_count, inbuf);
 				sprintf(outbuf, "Response for test %d", conn_count);
 				if (0 >= send(peer_sd, outbuf, strlen(outbuf)+1, 0)) {
 					printf("Server %d : failed to send response\n",
@@ -114,7 +114,7 @@ int main(int argc, char *argv[], char *dummy[])
 					exit(1);
 				}
 				printf("Server %d: responded with \"%s\"\n",
-				       conn_count, outbuf);    
+				       conn_count, outbuf);
 			}
 		}
 	}

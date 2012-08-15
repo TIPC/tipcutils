@@ -104,10 +104,10 @@ void *buf;
 socklen_t addr_size = sizeof(struct sockaddr_tipc);
 
 static enum client_mode_e {
-       data_client_e,
-       single_listener,
-       multi_server,
-       topology_client,
+	data_client_e,
+	single_listener,
+	multi_server,
+	topology_client,
 } mode;
 
 /*
@@ -115,16 +115,16 @@ static enum client_mode_e {
  */
 static inline void timestamp()
 {
-       struct timeval tv;
-       time_t current;
-       long ms;
-       char buf[30];
+	struct timeval tv;
+	time_t current;
+	long ms;
+	char buf[30];
 
-       gettimeofday(&tv, NULL);
-       current = tv.tv_sec;
-       strftime(buf, 30, "%T", localtime(&current));
-       ms = tv.tv_usec/1000;
-       fprintf(stderr,"[%s.%03ld] ",buf, ms);
+	gettimeofday(&tv, NULL);
+	current = tv.tv_sec;
+	strftime(buf, 30, "%T", localtime(&current));
+	ms = tv.tv_usec/1000;
+	fprintf(stderr,"[%s.%03ld] ",buf, ms);
 }
 
 /*
@@ -133,15 +133,15 @@ static inline void timestamp()
 
 int tipc_write(int tipc, void *buf, int len)
 {
-       switch (sock_type) {
-       case SOCK_DGRAM:
-       case SOCK_RDM:
-               len = sendto(tipc, buf, len, MSG_DONTWAIT, (void *)&addr_sk, sizeof(addr_sk));
-               break;
-       default:
-               len = write(tipc, buf, len);
-       }
-       return len;
+	switch (sock_type) {
+	case SOCK_DGRAM:
+	case SOCK_RDM:
+		len = sendto(tipc, buf, len, MSG_DONTWAIT, (void *)&addr_sk, sizeof(addr_sk));
+		break;
+	default:
+		len = write(tipc, buf, len);
+	}
+	return len;
 }
 
 /*
@@ -152,46 +152,46 @@ int tipc_write(int tipc, void *buf, int len)
 
 int generate_data(int tipc, int data_num)
 {
-       int i;
-       int eagin_stat = 0;
-       int len_total = 0;
+	int i;
+	int eagin_stat = 0;
+	int len_total = 0;
 
-       for (i = 0; i < data_num; i++) {
-               int try = 0;
-               if ((i % 10) == 0) {
-                       trl_();
-                       trvd_(eagin_stat);
-                       trvd_(i);
-                       trln();
-               }
-             again:
-               try++;
-               if (data_size) {
-                       sprintf(buf, "%0*d\n", data_size - 2, 0);
-               } else {
-                       sprintf(buf, "message %d try %d %x %d %x\n", i, try, name.addr.id.node, getpid(),
-                               name.addr.id.ref);
-               }
-               ret = tipc_write(tipc, buf, strlen(buf) + 1);
-               if (ret < 0 && errno == EAGAIN) {
-                       eagin_stat++;
-                       nanosleep(&((struct timespec){.tv_nsec = 100000000}), NULL);
-                       goto again;
-               }
-               if (ret < 0) {
-                       perror(__FUNCTION__);
-                       break;
-               }
-               if (ret > 0)
-                       len_total += ret;
-               trl_();
-               trvd_(i);
-               trvd_(len_total);
-               trvd_(ret);
-               trln();
-               nanosleep(&((struct timespec){.tv_nsec = 1000000 * delay}), NULL);	
-       }
-       return ret;
+	for (i = 0; i < data_num; i++) {
+		int try = 0;
+		if ((i % 10) == 0) {
+			trl_();
+			trvd_(eagin_stat);
+			trvd_(i);
+			trln();
+		}
+again:
+		try++;
+		if (data_size) {
+			sprintf(buf, "%0*d\n", data_size - 2, 0);
+		} else {
+			sprintf(buf, "message %d try %d %x %d %x\n", i, try, name.addr.id.node, getpid(),
+			        name.addr.id.ref);
+		}
+		ret = tipc_write(tipc, buf, strlen(buf) + 1);
+		if (ret < 0 && errno == EAGAIN) {
+			eagin_stat++;
+			nanosleep(&((struct timespec) {.tv_nsec = 100000000}), NULL);
+			goto again;
+		}
+		if (ret < 0) {
+			perror(__FUNCTION__);
+			break;
+		}
+		if (ret > 0)
+			len_total += ret;
+		trl_();
+		trvd_(i);
+		trvd_(len_total);
+		trvd_(ret);
+		trln();
+		nanosleep(&((struct timespec) {.tv_nsec = 1000000 * delay}), NULL);
+	}
+	return ret;
 }
 
 /*
@@ -232,62 +232,62 @@ int check_generated_data(int tipc)
 
 int pipe_start(int tipc)
 {
-       struct pollfd pfd[2];
-       struct sockaddr_tipc peer;
-       ssize_t len = 0;
-       ssize_t data_in_len = 0;
-       ssize_t len_total = 0; 
-       int i = 0;
+	struct pollfd pfd[2];
+	struct sockaddr_tipc peer;
+	ssize_t len = 0;
+	ssize_t data_in_len = 0;
+	ssize_t len_total = 0;
+	int i = 0;
 
-       trl();
-       pfd[0].fd = fileno(stdin);
-       pfd[0].events = POLLIN;
-       pfd[1].fd = tipc;
-       pfd[1].events = POLLIN;
-       /* Note: when zero length data received, transfer it and exit
-        */
-       while (poll(pfd, sizeof(pfd) / sizeof(pfd[0]), -1) > 0) {
-               data_in_len = 0;
-               if (pfd[0].revents & POLLIN) {
-                       len = data_in_len = read(fileno(stdin), buf, buf_size);
+	trl();
+	pfd[0].fd = fileno(stdin);
+	pfd[0].events = POLLIN;
+	pfd[1].fd = tipc;
+	pfd[1].events = POLLIN;
+	/* Note: when zero length data received, transfer it and exit
+	 */
+	while (poll(pfd, sizeof(pfd) / sizeof(pfd[0]), -1) > 0) {
+		data_in_len = 0;
+		if (pfd[0].revents & POLLIN) {
+			len = data_in_len = read(fileno(stdin), buf, buf_size);
 #if VERBOSE
-                       trvd_(data_in_len);
-                       trln();
+			trvd_(data_in_len);
+			trln();
 #endif
-                       if (data_in_len < 0)
-                               break;
-                     again:
-                       chkne(len = tipc_write(tipc, buf, data_in_len));
-                       if (len < 0 && errno == EAGAIN) {
-                               nanosleep(&((struct timespec){.tv_nsec = 100000000}), NULL);
-                               goto again;
-                       }
-               }
-               if (pfd[1].revents & POLLIN) {
-                       chkne(len = data_in_len = recvfrom(tipc, buf, buf_size, 0, (void *)&peer, &addr_size));
-                       if (replay) {
-                               addr_sk = peer;
-                       }
-                       if (data_in_len < 0)
-                               break;
-                       if (write(fileno(stdout), buf, data_in_len) != data_in_len)
-			       exit(EXIT_FAILURE);
-               }
-               if (data_in_len > 0)
-                       len_total += data_in_len;
+			if (data_in_len < 0)
+				break;
+again:
+			chkne(len = tipc_write(tipc, buf, data_in_len));
+			if (len < 0 && errno == EAGAIN) {
+				nanosleep(&((struct timespec) {.tv_nsec = 100000000}), NULL);
+				goto again;
+			}
+		}
+		if (pfd[1].revents & POLLIN) {
+			chkne(len = data_in_len = recvfrom(tipc, buf, buf_size, 0, (void *)&peer, &addr_size));
+			if (replay) {
+				addr_sk = peer;
+			}
+			if (data_in_len < 0)
+				break;
+			if (write(fileno(stdout), buf, data_in_len) != data_in_len)
+				exit(EXIT_FAILURE);
+		}
+		if (data_in_len > 0)
+			len_total += data_in_len;
 #if VERBOSE
-               trl_();
-               trvd_(i);
-               trvd_(len_total);
-               trvd_(data_in_len);
-               trln();
+		trl_();
+		trvd_(i);
+		trvd_(len_total);
+		trvd_(data_in_len);
+		trln();
 #endif
-               i++;
-               if (pfd[0].revents & POLLHUP || pfd[1].revents & POLLHUP && !data_in_len)
-                       break;
-               nanosleep(&((struct timespec){.tv_nsec = 1000000 * delay}), NULL);
-       }
-       return len;
+		i++;
+		if (pfd[0].revents & POLLHUP || pfd[1].revents & POLLHUP && !data_in_len)
+			break;
+		nanosleep(&((struct timespec) {.tv_nsec = 1000000 * delay}), NULL);
+	}
+	return len;
 }
 
 #ifndef TIPC_SOCK_RECVQ_MAX_DEPTH
@@ -304,17 +304,17 @@ int pipe_start(int tipc)
 
 int data_io(int tipc)
 {
-       if (recvq_depth) {
-               /* this is custom parameter, not yet implemented in mainstream source */
-               setsockopt(tipc, SOL_TIPC, TIPC_SOCK_RECVQ_MAX_DEPTH, &recvq_depth, sizeof(recvq_depth));
-       }
-       if (data_num)
-               ret = generate_data(tipc, data_num);
-       else if (data_check)
-               ret = check_generated_data(tipc);
-       else
-               ret = pipe_start(tipc);
-       return ret;
+	if (recvq_depth) {
+		/* this is custom parameter, not yet implemented in mainstream source */
+		setsockopt(tipc, SOL_TIPC, TIPC_SOCK_RECVQ_MAX_DEPTH, &recvq_depth, sizeof(recvq_depth));
+	}
+	if (data_num)
+		ret = generate_data(tipc, data_num);
+	else if (data_check)
+		ret = check_generated_data(tipc);
+	else
+		ret = pipe_start(tipc);
+	return ret;
 }
 
 /*
@@ -324,34 +324,34 @@ int data_io(int tipc)
 
 int listen_accept_and_io(int tipc)
 {
-       int peer_sd;
-       trl();
-       trvd_(mode);
-       trln();
-       ret = 0;
-       chkne(listen(tipc, 0));
-      again:
-       switch (mode) {
-       case single_listener:
-               chkne(peer_sd = accept(tipc, 0, 0));
-               ret = data_io(peer_sd);
-               shutdown(peer_sd, SHUT_RDWR);
-               close(peer_sd);
-               break;
-       case multi_server:
-               chkne(peer_sd = accept(tipc, 0, 0));
-               if (!fork()) {
-                       ret = data_io(peer_sd);
-                       shutdown(peer_sd, SHUT_RDWR);
-                       close(peer_sd);
-                       exit(0);
-               }
-               goto again;
-       default:
-               printf("Unknown mode");
-               break;
-       }
-       return ret;
+	int peer_sd;
+	trl();
+	trvd_(mode);
+	trln();
+	ret = 0;
+	chkne(listen(tipc, 0));
+again:
+	switch (mode) {
+	case single_listener:
+		chkne(peer_sd = accept(tipc, 0, 0));
+		ret = data_io(peer_sd);
+		shutdown(peer_sd, SHUT_RDWR);
+		close(peer_sd);
+		break;
+	case multi_server:
+		chkne(peer_sd = accept(tipc, 0, 0));
+		if (!fork()) {
+			ret = data_io(peer_sd);
+			shutdown(peer_sd, SHUT_RDWR);
+			close(peer_sd);
+			exit(0);
+		}
+		goto again;
+	default:
+		printf("Unknown mode");
+		break;
+	}
+	return ret;
 }
 
 /* tipc_addr_set - utility function to fill struct sockaddr_tipc
@@ -359,26 +359,26 @@ int listen_accept_and_io(int tipc)
 
 void tipc_addr_set(struct sockaddr_tipc *A, int addr_type, int server_type, int a1, int a2)
 {
-       memset(A, 0, sizeof(*A));
-       A->family = AF_TIPC;
-       A->scope = TIPC_CLUSTER_SCOPE;
-       A->addrtype = addr_type;
-       switch (addr_type) {
-       case TIPC_ADDR_MCAST:
-               A->addr.nameseq.type = server_type;
-               A->addr.nameseq.lower = a1;
-               A->addr.nameseq.upper = a2;
-               break;
-       case TIPC_ADDR_NAME:
-               A->addr.name.name.type = server_type;
-               A->addr.name.domain = 0;
-               A->addr.name.name.instance = a1;
-               break;
-       case TIPC_ADDR_ID:
-               A->addr.id.node = a1;
-               A->addr.id.ref = a2;
-               break;
-       }
+	memset(A, 0, sizeof(*A));
+	A->family = AF_TIPC;
+	A->scope = TIPC_CLUSTER_SCOPE;
+	A->addrtype = addr_type;
+	switch (addr_type) {
+	case TIPC_ADDR_MCAST:
+		A->addr.nameseq.type = server_type;
+		A->addr.nameseq.lower = a1;
+		A->addr.nameseq.upper = a2;
+		break;
+	case TIPC_ADDR_NAME:
+		A->addr.name.name.type = server_type;
+		A->addr.name.domain = 0;
+		A->addr.name.name.instance = a1;
+		break;
+	case TIPC_ADDR_ID:
+		A->addr.id.node = a1;
+		A->addr.id.ref = a2;
+		break;
+	}
 }
 
 #define add_literal_option(o)  do { options[optnum].name = #o; \
@@ -394,34 +394,34 @@ int optnum;
 
 int options_init()
 {
-       optnum = 0;
-       /* on gcc 64, pointer to variable can be used only on run-time
-        */
-       memset(options, 0, sizeof(options));
-       add_literal_option(sock_type);
-       add_literal_option(server_type);
-       add_literal_option(addr_type);
-       add_literal_option(delay);
-       add_literal_option(data_num);
-       add_literal_option(buf_size);
-       add_literal_option(data_size);
-       add_literal_option(wait_peer);
-       add_literal_option(recvq_depth);
-       add_flag_option("rdm", &sock_type, SOCK_RDM);
-       add_flag_option("pct", &sock_type, SOCK_PACKET);
-       add_flag_option("stm", &sock_type, SOCK_STREAM);
-       add_flag_option("sqp", &sock_type, SOCK_SEQPACKET);
-       add_flag_option("mc", &addr_type, TIPC_ADDR_MCAST);
-       add_flag_option("nam", &addr_type, TIPC_ADDR_NAME);
-       add_flag_option("top", &mode, topology_client);
-       add_flag_option("id", &addr_type, TIPC_ADDR_ID);
-       add_flag_option("data_check", &data_check, 1);
-       add_flag_option("replay", &replay, 1);
-       options[optnum].name = strdup("help");
-       options[optnum].has_arg = 0;
-       options[optnum].val = 'h';
-       optnum++;
-       return optnum;
+	optnum = 0;
+	/* on gcc 64, pointer to variable can be used only on run-time
+	 */
+	memset(options, 0, sizeof(options));
+	add_literal_option(sock_type);
+	add_literal_option(server_type);
+	add_literal_option(addr_type);
+	add_literal_option(delay);
+	add_literal_option(data_num);
+	add_literal_option(buf_size);
+	add_literal_option(data_size);
+	add_literal_option(wait_peer);
+	add_literal_option(recvq_depth);
+	add_flag_option("rdm", &sock_type, SOCK_RDM);
+	add_flag_option("pct", &sock_type, SOCK_PACKET);
+	add_flag_option("stm", &sock_type, SOCK_STREAM);
+	add_flag_option("sqp", &sock_type, SOCK_SEQPACKET);
+	add_flag_option("mc", &addr_type, TIPC_ADDR_MCAST);
+	add_flag_option("nam", &addr_type, TIPC_ADDR_NAME);
+	add_flag_option("top", &mode, topology_client);
+	add_flag_option("id", &addr_type, TIPC_ADDR_ID);
+	add_flag_option("data_check", &data_check, 1);
+	add_flag_option("replay", &replay, 1);
+	options[optnum].name = strdup("help");
+	options[optnum].has_arg = 0;
+	options[optnum].val = 'h';
+	optnum++;
+	return optnum;
 }
 
 /* expand_arg, return_if_arg_is_equal - utility functions to translate command line parameters
@@ -432,18 +432,18 @@ int options_init()
 
 int expand_arg(char *arg)
 {
-       if (!arg)
-               return 0;
-       return_if_arg_is_equal(SOCK_STREAM);
-       return_if_arg_is_equal(SOCK_DGRAM);
-       return_if_arg_is_equal(SOCK_RDM);
-       return_if_arg_is_equal(SOCK_SEQPACKET);
+	if (!arg)
+		return 0;
+	return_if_arg_is_equal(SOCK_STREAM);
+	return_if_arg_is_equal(SOCK_DGRAM);
+	return_if_arg_is_equal(SOCK_RDM);
+	return_if_arg_is_equal(SOCK_SEQPACKET);
 
-       return_if_arg_is_equal(TIPC_ADDR_NAMESEQ);
-       return_if_arg_is_equal(TIPC_ADDR_MCAST);
-       return_if_arg_is_equal(TIPC_ADDR_NAME);
-       return_if_arg_is_equal(TIPC_ADDR_ID);
-       return atoi(arg);
+	return_if_arg_is_equal(TIPC_ADDR_NAMESEQ);
+	return_if_arg_is_equal(TIPC_ADDR_MCAST);
+	return_if_arg_is_equal(TIPC_ADDR_NAME);
+	return_if_arg_is_equal(TIPC_ADDR_ID);
+	return atoi(arg);
 }
 
 char *usage = "Usage:\n\
@@ -535,78 +535,78 @@ tipc-pipe --server_type=1000 --top -- 0 -1\n\
 
 int init(int argc, char *argv[])
 {
-       int opt = 0;
-       int longindex = 0;
-       options_init();
-       opterr = 0;
-       while ((opt = getopt_long(argc, argv, "hsl", options, &longindex)) != -1) {
-               switch (opt) {
-               case 0:
-                       if (options[longindex].val == -1)
-                               *options[longindex].flag = expand_arg(optarg);
-                       break;
-               case 'h':
-                       printf("%s", usage);
-                       exit(0);
-                       break;
-               case 's':
-                       mode = single_listener;
-                       break;
-               case 'l':
-                       mode = multi_server;
-                       break;
-               default:        /* '?' */
-                       printf("Error in arguments\n");
-                       exit(EXIT_FAILURE);
-               }
-       }
-       if (optind < argc) {
-               addr1 = addr2 = atoi(argv[optind]);
-       }
-       if (optind + 1 < argc) {
-               addr2 = atoi(argv[optind + 1]);
-       }
-       trvd_(sock_type);
-       trvd_(server_type);
-       trvd_(addr_type);
-       trvd_(addr1);
-       trvd_(addr2);
-       trvd_(delay);
-       trvd_(data_num);
-       trvd_(buf_size);
-       trvd_(data_check);
-       trln();
-       assert(data_size + 1 < buf_size);
-       return 0;
+	int opt = 0;
+	int longindex = 0;
+	options_init();
+	opterr = 0;
+	while ((opt = getopt_long(argc, argv, "hsl", options, &longindex)) != -1) {
+		switch (opt) {
+		case 0:
+			if (options[longindex].val == -1)
+				*options[longindex].flag = expand_arg(optarg);
+			break;
+		case 'h':
+			printf("%s", usage);
+			exit(0);
+			break;
+		case 's':
+			mode = single_listener;
+			break;
+		case 'l':
+			mode = multi_server;
+			break;
+		default:        /* '?' */
+			printf("Error in arguments\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+	if (optind < argc) {
+		addr1 = addr2 = atoi(argv[optind]);
+	}
+	if (optind + 1 < argc) {
+		addr2 = atoi(argv[optind + 1]);
+	}
+	trvd_(sock_type);
+	trvd_(server_type);
+	trvd_(addr_type);
+	trvd_(addr1);
+	trvd_(addr2);
+	trvd_(delay);
+	trvd_(data_num);
+	trvd_(buf_size);
+	trvd_(data_check);
+	trln();
+	assert(data_size + 1 < buf_size);
+	return 0;
 }
 
 int run_server(tipc)
 {
-       trl();
-       chkne(bind(tipc, (void *)&addr_sk, sizeof(addr_sk)));
-       switch (sock_type) {
-       case SOCK_SEQPACKET:
-       case SOCK_STREAM:
-               ret = listen_accept_and_io(tipc);
-               break;
-       default:
-               ret = data_io(tipc);
-       }
-       trl();
-       return ret;
+	trl();
+	chkne(bind(tipc, (void *)&addr_sk, sizeof(addr_sk)));
+	switch (sock_type) {
+	case SOCK_SEQPACKET:
+	case SOCK_STREAM:
+		ret = listen_accept_and_io(tipc);
+		break;
+	default:
+		ret = data_io(tipc);
+	}
+	trl();
+	return ret;
 }
 
 int run_client(int tipc)
 {
-       trl();
-       switch (sock_type) {
-       case SOCK_SEQPACKET:
-       case SOCK_STREAM:
-               chkne(connect(tipc, (void *)&addr_sk, sizeof(addr_sk)));
-               break;
-       }
-       ret = data_io(tipc);
-       return ret;
+	trl();
+	switch (sock_type) {
+	case SOCK_SEQPACKET:
+	case SOCK_STREAM:
+		chkne(connect(tipc, (void *)&addr_sk, sizeof(addr_sk)));
+		break;
+	}
+	ret = data_io(tipc);
+	return ret;
 }
 
 /*
@@ -619,78 +619,78 @@ int run_client(int tipc)
 
 int wait_for_server(__u32 name_instance, int wait)
 {
-       struct sockaddr_tipc topsrv;
-       struct tipc_subscr subscr;
-       struct tipc_event event;
+	struct sockaddr_tipc topsrv;
+	struct tipc_subscr subscr;
+	struct tipc_event event;
 
-       int sd = socket(AF_TIPC, SOCK_SEQPACKET, 0);
-       tipc_addr_set(&topsrv, TIPC_ADDR_NAME, TIPC_TOP_SRV, TIPC_TOP_SRV, 0);
-       chkne(connect(sd, (void *)&topsrv, sizeof(topsrv)));
-       subscr.seq.type = htonl(server_type);
-       subscr.seq.lower = subscr.seq.upper = htonl(name_instance);
-       subscr.timeout = htonl(wait);
-       subscr.filter = htonl(TIPC_SUB_SERVICE);
+	int sd = socket(AF_TIPC, SOCK_SEQPACKET, 0);
+	tipc_addr_set(&topsrv, TIPC_ADDR_NAME, TIPC_TOP_SRV, TIPC_TOP_SRV, 0);
+	chkne(connect(sd, (void *)&topsrv, sizeof(topsrv)));
+	subscr.seq.type = htonl(server_type);
+	subscr.seq.lower = subscr.seq.upper = htonl(name_instance);
+	subscr.timeout = htonl(wait);
+	subscr.filter = htonl(TIPC_SUB_SERVICE);
 
-       chkne(write(sd, &subscr, sizeof(subscr)));
-       chkne(read(sd, &event, sizeof(event)));
-       close(sd);
-       return ntohl(event.event);
+	chkne(write(sd, &subscr, sizeof(subscr)));
+	chkne(read(sd, &event, sizeof(event)));
+	close(sd);
+	return ntohl(event.event);
 }
 
 int run_topology_client(int lower, int upper)
 {
-       struct sockaddr_tipc topsrv;
-       struct tipc_subscr subscr = { {0} };
+	struct sockaddr_tipc topsrv;
+	struct tipc_subscr subscr = { {0} };
 
-       int sd = socket(AF_TIPC, SOCK_SEQPACKET, 0);
-       tipc_addr_set(&topsrv, TIPC_ADDR_NAME, TIPC_TOP_SRV, TIPC_TOP_SRV, 0);
-       chkne(connect(sd, (void *)&topsrv, sizeof(topsrv)));
-       subscr.seq.type = htonl(server_type);
-       subscr.seq.lower = htonl(lower);
-       subscr.seq.upper = htonl(upper);
-       subscr.timeout = htonl(-1);
-       subscr.filter = htonl(TIPC_SUB_SERVICE);
+	int sd = socket(AF_TIPC, SOCK_SEQPACKET, 0);
+	tipc_addr_set(&topsrv, TIPC_ADDR_NAME, TIPC_TOP_SRV, TIPC_TOP_SRV, 0);
+	chkne(connect(sd, (void *)&topsrv, sizeof(topsrv)));
+	subscr.seq.type = htonl(server_type);
+	subscr.seq.lower = htonl(lower);
+	subscr.seq.upper = htonl(upper);
+	subscr.timeout = htonl(-1);
+	subscr.filter = htonl(TIPC_SUB_SERVICE);
 
-       chkne(write(sd, &subscr, sizeof(subscr)));
-       do {
-               struct tipc_event event = { 0 };
-               ret = read(sd, &event, sizeof(event));
-               fprintf(stderr, "TIPC_TOP_SRV event %d %d %d\n",
-                       ntohl(event.event), ntohl(event.found_lower), ntohl(event.found_upper));
-       } while (ret >= 0);
-       close(sd);
-       return ret;
+	chkne(write(sd, &subscr, sizeof(subscr)));
+	do {
+		struct tipc_event event = { 0 };
+		ret = read(sd, &event, sizeof(event));
+		fprintf(stderr, "TIPC_TOP_SRV event %d %d %d\n",
+		        ntohl(event.event), ntohl(event.found_lower), ntohl(event.found_upper));
+	} while (ret >= 0);
+	close(sd);
+	return ret;
 }
 
 int main(int argc, char *argv[])
 {
-       int tipc;
+	int tipc;
 #ifdef TRACE_ON
-       fprintf(stderr, "%s compiled " __DATE__ " " __TIME__ "\n", argv[0]);
+	fprintf(stderr, "%s compiled " __DATE__ " " __TIME__ "\n", argv[0]);
 #endif
-       init(argc, argv);
-       buf = malloc(buf_size);
-       tipc = socket(AF_TIPC, sock_type, 0);
-       chkne(getsockname(tipc, (void *)&name, &addr_size));
-       trvx_(name.addr.id.ref);
-       trln();
-       tipc_addr_set(&addr_sk, addr_type, server_type, addr1, addr2);
-       if (wait_peer)
-               wait_for_server(addr1, wait_peer);
-       switch (mode) {
-       case topology_client:
-               run_topology_client(addr1, addr2);
-               break;
-       case single_listener:
-       case multi_server:
-               run_server(tipc);
-               break;
-       default:
-               run_client(tipc);
-       }
-       exit(0);
-       free(buf);
-       shutdown(tipc, SHUT_RDWR);
-       close(tipc);
-       exit(EXIT_SUCCESS);
+	init(argc, argv);
+	buf = malloc(buf_size);
+	tipc = socket(AF_TIPC, sock_type, 0);
+	chkne(getsockname(tipc, (void *)&name, &addr_size));
+	trvx_(name.addr.id.ref);
+	trln();
+	tipc_addr_set(&addr_sk, addr_type, server_type, addr1, addr2);
+	if (wait_peer)
+		wait_for_server(addr1, wait_peer);
+	switch (mode) {
+	case topology_client:
+		run_topology_client(addr1, addr2);
+		break;
+	case single_listener:
+	case multi_server:
+		run_server(tipc);
+		break;
+	default:
+		run_client(tipc);
+	}
+	exit(0);
+	free(buf);
+	shutdown(tipc, SHUT_RDWR);
+	close(tipc);
+	exit(EXIT_SUCCESS);
 }
