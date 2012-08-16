@@ -56,6 +56,7 @@
 #include <ctype.h>
 #include <getopt.h>
 #include <linux/tipc.h>
+#include <time.h>
 
 
 static inline void killme(int exit_code)
@@ -76,7 +77,7 @@ static inline unsigned int getTimeStamp (void)
 static inline void taskDelay(int x)
 {
 	/*	printf("Delaying %d ms\n", x); */
-	usleep(1000 * x);
+	nanosleep(&((struct timespec){.tv_nsec = 1000000 * x}), NULL);
 }
 
 #endif
