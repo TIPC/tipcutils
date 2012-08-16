@@ -62,6 +62,10 @@
 
 #include <linux/tipc.h>
 
+#define BUF_SIZE 30
+#define MAP_EXPECTED_SEQUENCE_NUMBERS 255
+#define OPTIONS 100
+
 #define TRACE_ON
 
 #ifdef TRACE_ON
@@ -118,7 +122,7 @@ static inline void timestamp()
 	struct timeval tv;
 	time_t current;
 	long ms;
-	char buf[30];
+	char buf[BUF_SIZE];
 
 	gettimeofday(&tv, NULL);
 	current = tv.tv_sec;
@@ -201,7 +205,7 @@ again:
 int check_generated_data(int tipc)
 {
        /* map of expected sequence numbers for each sender */
-       int i[255] = { 0, };
+       int i[MAP_EXPECTED_SEQUENCE_NUMBERS] = { 0, };
        ssize_t len;
        struct sockaddr_tipc peer;
 
@@ -389,7 +393,7 @@ void tipc_addr_set(struct sockaddr_tipc *A, int addr_type, int server_type, int 
        options[optnum].flag = (int*)p; options[optnum].has_arg = 0; \
        options[optnum].val = v; optnum++; } while (0)
 
-static struct option options[100];
+static struct option options[OPTIONS];
 int optnum;
 
 int options_init()
