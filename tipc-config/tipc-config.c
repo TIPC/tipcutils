@@ -58,6 +58,9 @@ typedef void (*VOIDFUNCPTR) ();
 
 #define MAX_COMMANDS 8
 #define MAX_TLVS_SPACE 33000		/* must be a multiple of 4 bytes */
+#define ADDR_AREA 30
+#define REPLY_LEN 256
+#define ARGS_SIZE 128
 
 /* local variables */
 
@@ -144,7 +147,7 @@ static const char *addr2str(__u32 addr)
 
 static const char *for_dest(void)
 {
-	static char addr_area[30];
+	static char addr_area[ADDR_AREA];
 
 	if (dest == own_node())
 		return "";
@@ -154,7 +157,7 @@ static const char *for_dest(void)
 
 static const char *for_domain(const char *string, __u32 domain)
 {
-	static char addr_area[30];
+	static char addr_area[ADDR_AREA];
 
 	if (domain == 0)
 		return "";
@@ -408,8 +411,7 @@ static int get_genl_family_id(const char* name)
 	char request[NLA_SIZE(struct nlattr_family_name)];
 	int request_len = nla_put_string((struct nlattr *)request, CTRL_ATTR_FAMILY_NAME, name);
 
-	char reply[256];
-	int reply_len = sizeof(reply);
+	char reply[REPLY_LEN];
 
 	/*
 	 * Call control service
@@ -417,7 +419,7 @@ static int get_genl_family_id(const char* name)
 	int len = genetlink_call(GENL_ID_CTRL, CTRL_CMD_GETFAMILY,
 	                         0, 0,
 	                         request, request_len,
-	                         reply, reply_len);
+	                         reply, sizeof(reply));
 
 	if (len == -1)
 		return -1;
@@ -1216,7 +1218,7 @@ static void disable_bearerset(char *args)
 
 struct command {
 	void (*fcn) (char *args);
-	char args[128];
+	char args[ARGS_SIZE];
 };
 
 /*
