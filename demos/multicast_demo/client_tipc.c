@@ -48,6 +48,7 @@
 #include <linux/tipc.h>
 
 #define SERVER_TYPE  18888
+#define BUF_SIZE 100
 
 void wait_for_server(__u32 name_type, __u32 name_instance, int wait)
 {
@@ -99,7 +100,7 @@ void wait_for_server(__u32 name_type, __u32 name_instance, int wait)
 void client_mcast(int sd, int lower, int upper)
 {
 	struct sockaddr_tipc server_addr;
-	char buf[100];
+	char buf[BUF_SIZE];
 
 	server_addr.family = AF_TIPC;
 	server_addr.addrtype = TIPC_ADDR_MCAST;

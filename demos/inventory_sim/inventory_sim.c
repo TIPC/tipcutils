@@ -158,6 +158,8 @@ Examples
 
 #define TIPC_BOGUS_SUBSCR_TYPE TIPC_TOP_SRV
 #define TIPC_BOGUS_SUBSCR_INST 0
+#define TRANSACTION_CONTENT_SIZE 100
+#define NAME_SIZE 30
 
 enum {					/* simulation state values */
 	STORE_OPEN      = 0,
@@ -182,7 +184,7 @@ enum {					/* logging task transaction codes */
 
 struct trans_msg {			/* logging task message format */
 	int code;			/* transaction type identifier */
-	char string_area[100];		/* transaction content */
+	char string_area[TRANSACTION_CONTENT_SIZE];		/* transaction content */
 };
 
 /* locals */
@@ -940,7 +942,7 @@ int simItem(int itemID, int lagTime, int speed)
 	uint zone;
 	uint cluster;
 	uint node;
-	char itemName[8];
+	char itemName[NAME_SIZE];
 	int haveItem;
 	int res;
 	int simRes = SIM_ERROR;
@@ -1134,7 +1136,7 @@ int simCust(int itemID, int lagTime, int waitTime, int speed, int taskID)
 	uint zone;
 	uint cluster;
 	uint node;
-	char custName[30];
+	char custName[NAME_SIZE];
 	int transactionID;
 	int needItem;
 	fd_set readFds;

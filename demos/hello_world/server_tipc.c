@@ -45,6 +45,7 @@
 
 #define SERVER_TYPE  18888
 #define SERVER_INST  17
+#define BUF_SIZE 40
 
 int main(int argc, char *argv[], char *dummy[])
 {
@@ -52,8 +53,8 @@ int main(int argc, char *argv[], char *dummy[])
 	struct sockaddr_tipc client_addr;
 	socklen_t alen = sizeof(client_addr);
 	int sd;
-	char inbuf[40];
-	char outbuf[40] = "Uh ?";
+	char inbuf[BUF_SIZE];
+	char outbuf[BUF_SIZE] = "Uh ?";
 
 	printf("****** TIPC server hello world program started ******\n\n");
 

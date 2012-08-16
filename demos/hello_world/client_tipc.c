@@ -48,6 +48,7 @@
 
 #define SERVER_TYPE  18888
 #define SERVER_INST  17
+#define BUF_SIZE 40
 
 void wait_for_server(__u32 name_type, __u32 name_instance, int wait)
 {
@@ -100,7 +101,7 @@ int main(int argc, char *argv[], char *dummy[])
 {
 	int sd;
 	struct sockaddr_tipc server_addr;
-	char buf[40] = {"Hello World"};
+	char buf[BUF_SIZE] = {"Hello World"};
 
 	printf("****** TIPC client hello world program started ******\n\n");
 

@@ -50,6 +50,7 @@
 #include <linux/tipc.h>
 
 #define SERVER_TYPE  18888
+#define BUF_SIZE 100
 
 void server_mcast(int lower, int upper)
 {
@@ -57,7 +58,7 @@ void server_mcast(int lower, int upper)
 	struct sockaddr_tipc client_addr;
 	socklen_t alen = sizeof(struct sockaddr_tipc);
 	int sd;
-	char buf[100];
+	char buf[BUF_SIZE];
 
 	server_addr.family = AF_TIPC;
 	server_addr.addrtype = TIPC_ADDR_NAMESEQ;
