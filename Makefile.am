@@ -1,1 +1,1 @@
-SUBDIRS=tipc-config tipc-pipe ptts demos
+SUBDIRS=tipc-config tipc-pipe ptts demos man

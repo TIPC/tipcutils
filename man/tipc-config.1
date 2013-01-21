@@ -1,0 +1,107 @@
+.TH TIPC-CONFIG 1 "20 Jan 2013"
+.SH NAME
+tipc-config /- tipc configuration
+.SH SYNOPSIS
+tipc-config command [command ...]
+.SH DESCRIPTION
+Configure TIPC node address, bearers and network.
+.SS Options
+.TP
+-addr [=<addr>]
+Get/set node address
+.TP
+-b    [=<bearerpat>]
+Get bearers
+.TP
+-bd    =<bearerpat>
+Disable bearer
+.TP
+-be    =<bearer>[/<domain>[/<priority>]]]  Enable bearer
+.TP
+-dest  =<addr>
+Command destination node
+.TP
+-help
+This usage list
+.TP
+-i
+Interactive set operations
+.TP
+-l    [=<domain>|<linkpat>]
+Get links to domain
+.TP
+-log  [=<size>]
+Dump/resize log
+.TP
+-lp    =<linkpat>|<bearer>|<media>/<value>
+Set link priority
+.TP
+-ls   [=<linkpat>]
+Get link statistics
+.TP
+-lsr   =<linkpat>
+Reset link statistics
+.TP
+-lt    =<linkpat>|<bearer>|<media>/<value>
+Set link tolerance
+.TP
+-lw    =<linkpat>|<bearer>|<media>/<value>
+Set link window
+.TP
+-m
+Get media
+.TP
+-max_ports    [=<value>]
+Get/set max number of ports
+.TP
+-max_publ     [=<value>]
+Get/set max publications
+.TP
+-max_subscr   [=<value>]
+Get/set max subscriptions
+.TP
+-mng  [=enable|disable]
+Get/set remote management
+.TP
+-n    [=<domain>]
+Get nodes in domain
+.TP
+-netid[=<value>]
+Get/set network id
+.TP
+-nt   [=[<depth>,]<type>[,<low>[,<up>]]]
+Get name table
+where <depth> = types|names|ports|all
+.TP
+-p
+Get port info
+.TP
+-s
+Get TIPC status info
+.TP
+-v
+Verbose output
+.TP
+-V
+Get tipc-config version info
+
+.SH EXAMPLES
+Assign an address to the node, switch from standalone to networking mode and enable eth0
+as a TIPC bearer.
+.IP
+$ tipc-config -a=1.1.1 -be=eth:eth0
+.PP
+Change the default link tolerance to 2500 ms for all subsequently enabled bearers
+.IP
+$ tipc-config -lt=eth/2500
+.PP
+Change the default link tolerance to 2500 ms for all links subsequently established on bearer eth:eth0
+.IP
+$ tipc-config -lt=eth:eth0/2500
+.PP
+
+.SH BUGS
+Any bugs should be submitted to the TIPC mailinglist <tipc-discussion@lists.sourceforge.net>
+.SH "SEE ALSO"
+tipc-pipe(1)
+.SH BUGS

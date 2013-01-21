@@ -31,6 +31,7 @@ AC_CONFIG_FILES([
 	demos/multicast_demo/Makefile
 	demos/stream_demo/Makefile
 	demos/topology_subscr_demo/Makefile
+        man/Makefile
 	])
 
 AC_OUTPUT
