@@ -3,105 +3,113 @@
 tipc-config /- tipc configuration
 .SH SYNOPSIS
 tipc-config command [command ...]
+
 .SH DESCRIPTION
-Configure TIPC node address, bearers and network.
+The tipc-config tool provides numerous commands for configuring and monitoring a TIPC network. Certain commands are only available to users having network administrator privileges (eg. root) to prevent unauthorized users from reconfiguring the network.
+
+Users can pass multiple commands to tipc-config in a single invocation. Commands are normally processed serially, from left to right; exceptions are the "-v", "-i", and "-dest" commands, which have an immediate effect on all commands in a command set. If tipc-config detects a failure while executing a set of commands, it exits without attempting any unprocessed commands.
+
 .SS Options
-.TP
--addr [=<addr>]
-Get/set node address
-.TP
--b    [=<bearerpat>]
-Get bearers
-.TP
--bd    =<bearerpat>
-Disable bearer
-.TP
--be    =<bearer>[/<domain>[/<priority>]]]  Enable bearer
-.TP
--dest  =<addr>
-Command destination node
 .TP
 -help
 This usage list
+
 .TP
 -i
 Interactive set operations
+
 .TP
 -l    [=<domain>|<linkpat>]
 Get links to domain
+
 .TP
 -log  [=<size>]
 Dump/resize log
+
 .TP
 -lp    =<linkpat>|<bearer>|<media>/<value>
 Set link priority
+
 .TP
 -ls   [=<linkpat>]
 Get link statistics
+
 .TP
 -lsr   =<linkpat>
 Reset link statistics
+
 .TP
 -lt    =<linkpat>|<bearer>|<media>/<value>
 Set link tolerance
+
 .TP
 -lw    =<linkpat>|<bearer>|<media>/<value>
 Set link window
+
 .TP
 -m
 Get media
+
 .TP
 -max_ports    [=<value>]
 Get/set max number of ports
+
 .TP
 -max_publ     [=<value>]
 Get/set max publications
+
 .TP
 -max_subscr   [=<value>]
 Get/set max subscriptions
+
 .TP
 -mng  [=enable|disable]
 Get/set remote management
+
 .TP
 -n    [=<domain>]
 Get nodes in domain
+
 .TP
 -netid[=<value>]
 Get/set network id
+
 .TP
 -nt   [=[<depth>,]<type>[,<low>[,<up>]]]
 Get name table
 where <depth> = types|names|ports|all
+
 .TP
 -p
 Get port info
+
 .TP
 -s
 Get TIPC status info
+
 .TP
 -v
 Verbose output
+
 .TP
 -V
 Get tipc-config version info
 
-.SH EXAMPLES
-Assign an address to the node, switch from standalone to networking mode and enable eth0
-as a TIPC bearer.
-.IP
-$ tipc-config -a=1.1.1 -be=eth:eth0
-.PP
-Change the default link tolerance to 2500 ms for all subsequently enabled bearers
-.IP
-$ tipc-config -lt=eth/2500
-.PP
-Change the default link tolerance to 2500 ms for all links subsequently established on bearer eth:eth0
-.IP
-$ tipc-config -lt=eth:eth0/2500
-.PP
+.SH "EXMAPLES"
 
-.SH BUGS
-Any bugs should be submitted to the TIPC mailinglist <tipc-discussion@lists.sourceforge.net>
+Set up TIPC with network id 1234 and address 1.1.8 on eth0
+       tipc-config -netid=1234 -a=1.1.8 -be=eth:eth0
+
+Display the name table
+       tipc-config -nt
+
 .SH "SEE ALSO"
 tipc-pipe(1)
-.SH BUGS
+
+.SH "AUTHORS"
+Written by
+.I erik.hugne@ericsson.com
+
+.SH "REPORTING BUGS"
+Report ls bugs to
+.I tipc-discussion@lists.sourceforge.net

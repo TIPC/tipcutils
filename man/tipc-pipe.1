@@ -1,0 +1,122 @@
+.TH TIPC-PIPE 1 "25 Jan 2013"
+.SH "NAME"
+tipc-PIPE /- simple client/server
+.SH SYNOPSIS
+tipc-pipe <options> [address 1] [address 2]
+
+.SH "DESCRIPTION"
+tipc-pipe acts as a netcat like program for tipc. It is used for reading and writing network connections using tipc
+
+.SS Options
+default values are marked with '*'
+
+.TP
+-h | --help
+show this help
+
+.TP
+-l
+run in server mode, accept multiple connections
+
+.TP
+-s
+run in single connection server mode, exit on connection close
+default mode is client mode
+
+.TP
+--sock_type *SOCK_STREAM | SOCK_DGRAM | SOCK_RDM | SOCK_SEQPACKET
+
+.TP
+--server_type *1000|<n>
+
+.TP
+--addr_type TIPC_ADDR_NAMESEQ | TIPC_ADDR_MCAST | *TIPC_ADDR_NAME
+For TIPC_ADDR_NAME only address 1 is used.
+For TIPC_ADDR_NAMESEQ or TIPC_ADDR_MCAST address 1 and address 2 are used.
+
+.TP
+--delay *0|<ms>
+Defines data reading and writing delay in ms.
+
+.TP
+--data_num *0|<count>
+Generates defined number of sample data and sends is.
+
+.TP
+--data_size *0
+Generates packets of defined size when data_num is defined.
+
+.TP
+--data_check
+Check sequence numbers in received data,
+generated with option data_num.
+
+.TP
+--buf_size *66000|<n>
+I/O buffer size (see TIPC_MAX_USER_MSG_SIZE).
+
+.TP
+--wait_peer *0
+Wait for peer published state before communication.
+
+.TP
+--top
+run topology client
+
+.TP
+--replay
+force connectionless server send input to last connected client 
+
+.SS Short Options
+
+.TP
+--rdm
+sock_type = SOCK_RDM
+
+.TP
+--pct
+sock_type = SOCK_PACKET
+
+.TP
+--stm
+* sock_type = SOCK_STREAM
+
+.TP
+--sqp
+sock_type = SOCK_SEQPACKET
+
+.TP
+--nam
+* addr_type = TIPC_ADDR_NAME
+
+.TP
+--mc
+addr_type = TIPC_ADDR_MCAST or TIPC_ADDR_NAMESEQ
+
+.TP
+--id
+addr_type = TIPC_ADDR_ID
+
+.SH "EXAMPLES"
+
+SOCK_STREAM single connection server with address zero and client:
+       tipc-pipe -s | tee input
+       date | tipc-pipe
+
+SOCK_RDM server with address 123 and client:
+       tipc-pipe --rdm --replay -l 123
+       tipc-pipe --rdm 123
+
+Start topology client for all addresses of specified optional server type
+       tipc-pipe --server_type=1000 --top -- 0 -1
+
+
+.SH "SEE ALSO"
+tipc-config(1)
+
+.SH "AUTHORS"
+.I Constantine Shulyupin const@makelinux.com
+
+.SH "REPORTING BUGS"
+Report ls bugs to
+.I tipc-discussion@lists.sourceforge.net
