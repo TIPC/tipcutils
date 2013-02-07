@@ -1,0 +1,119 @@
+#!/bin/sh
+# Author: Martin Peylo <debian@izac.de>
+
+### BEGIN INIT INFO
+# Provides:          tipc
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Should-Start:
+# Should-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: TIPC Transparent Inter Process Communication
+# Description:       TIPC is an IPC for clusters
+### END INIT INFO
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+DESC="Transparent Inter Process Communication"
+NAME="tipcutils"
+TIPCCONFIG="/sbin/tipc-config"
+MODULE=/lib/modules/`uname -r`/kernel/net/tipc/tipc.ko
+
+# Exit if the module is not installed
+[ -e "$MODULE" ] || exit 0
+
+# Exit if tipc-config is not installed
+[ -x "$TIPCCONFIG" ] || exit 0
+
+# Exit if the configuration is not installed
+[ -e "/etc/default/$NAME" ] || exit 0
+
+# Read configuration variable file if it is present
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+start_interfaces()
+{
+	INTERFACES=`/sbin/ifconfig -a | sed -e '/^[^ ]/ { s/^\([^ ]*\).*$/\1/; p; };  d;'`
+
+	for IF in $INTERFACES
+	do
+		for TIPC_IF in $TIPC_INTERFACES
+		do
+			if [ $TIPC_IF = $IF ]; then
+				IFACE=$IF /etc/network/if-up.d/$NAME
+			fi
+		done
+	done
+}
+
+start_tipc()
+{
+	echo Starting TIPC
+	if [ -n "$TIPC_NETID" ]; then
+		# Loads the module
+		test "$TIPC_VERBOSITY" = 1 && echo modprobe -q tipc
+		if ! modprobe -q tipc; then
+			echo "Error configuring TIPC, loading the kernel module failed!"
+			exit 0
+		fi
+		test "$TIPC_VERBOSITY" = 1 && echo $TIPCCONFIG -netid="$TIPC_NETID"
+		if ! $TIPCCONFIG -netid="$TIPC_NETID"; then
+			echo "Error configuring TIPC, setting the nedid to $TIPC_NETID failed!"
+			exit 0
+		fi
+	fi
+
+	if [ -n "$TIPC_REMOTE_MANAGEMENT" ]; then
+		test "$TIPC_VERBOSITY" = 1 && echo $TIPCCONFIG -mng="$TIPC_REMOTE_MANAGEMENT"
+		if [ "$TIPC_REMOTE_MANAGEMENT" = "true" ] || [ "$TIPC_REMOTE_MANAGEMENT" = "enable" ]; then
+			TIPC_REM_MGMNT="enable"
+		else
+			TIPC_REM_MGMNT="disable"
+		fi
+		if ! $TIPCCONFIG -mng="$TIPC_REM_MGMNT"; then
+			echo "Error configuring TIPC, setting the remote management to \"$TIPC_REM_MGMNT\" failed!"
+			exit 0
+		fi
+	fi
+
+	if [ -n "$TIPC_ADDR" ]; then
+		test "$TIPC_VERBOSITY" = 1 && echo $TIPCCONFIG -addr="$TIPC_ADDR"
+		if ! $TIPCCONFIG -addr="$TIPC_ADDR"; then
+			echo "Error configuring TIPC, setting the address to \"$TIPC_ADDR\" failed!"
+			exit 0
+		fi
+	fi
+
+	start_interfaces
+}
+
+stop_tipc()
+{
+	# only unloading the module stops tipc
+	( lsmod |grep -q tipc ) && rmmod tipc
+}
+
+case "$1" in
+  start)
+	if [ "$TIPC_CONFIGURED" != "true" ]; then
+		echo TIPC is not configured in \"/etc/default/$NAME\".
+		echo To configure TIPC, run \`dpkg-reconfigure -plow tipcutils\`!
+		exit 0
+	fi
+
+	start_tipc
+	;;
+  stop)
+	stop_tipc
+	;;
+  restart|force-reload)
+	stop_tipc
+	start_tipc
+	;;
+  *)
+	echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
+	exit 3
+	;;
+esac
+
+:

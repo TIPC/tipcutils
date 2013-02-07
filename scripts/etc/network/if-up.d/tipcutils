@@ -1,0 +1,59 @@
+#!/bin/sh
+
+# tipc if-up.d script by
+# Leandro Lucarella <llucarella@integratech.com.ar>
+# and
+# Martin Peylo <debian@izac.de>
+
+TIPCCONFIG=/sbin/tipc-config
+NAME=tipcutils
+
+# Exit if tipc-config is not installed
+if [ ! -x $TIPCCONFIG ]; then
+  exit 0
+fi
+
+# Exit if the configuration is not installed
+[ -e "/etc/default/$NAME" ] || exit 1
+
+# Read configuration variable file if it is present
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+if [ "$TIPC_CONFIGURED" != "true" ]; then
+	echo TIPC is not set as configured in \"/etc/default/$NAME\".
+	echo To configure TIPC, run \`dpkg-reconfigure -plow tipcutils\`!
+	echo Not setting up interface \"$IFACE\".
+	exit 1
+fi
+
+# Test if the interface shall be configured
+START_IF="FALSE"
+for TEST_IF in $TIPC_INTERFACES
+do
+	if [ "$IFACE" = "$TEST_IF" ]; then
+		START_IF="TRUE"
+	fi
+done
+if [ "$START_IF" = "TRUE" ]; then
+	echo Starting TIPC on interface $IFACE
+else
+	exit 0
+fi
+
+if [ "$VERBOSITY" = "1" ]; then
+	TIPCCONFIG="$TIPCCONFIG -v"
+fi
+
+# there is no other media type possible *at this moment*
+IF_TIPC_MEDIA="eth"
+
+be="$IF_TIPC_MEDIA:$IFACE"
+if [ -n "$TIPC_NEIGHBOUR_DETECTION_DOMAIN" ]; then
+	be="$be/$TIPC_NEIGHBOUR_DETECTION_DOMAIN"
+fi
+
+# enable the interface only if was not enabled for this bearer so far
+if ! ($TIPCCONFIG -b|grep -q "$IF_TIPC_MEDIA:$IFACE"); then
+	test "$VERBOSITY" = 1 && echo $TIPCCONFIG -be="$be"
+	$TIPCCONFIG -be="$be"
+fi

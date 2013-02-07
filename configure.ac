@@ -33,5 +33,10 @@ AC_CONFIG_FILES([
 	demos/topology_subscr_demo/Makefile
         man/Makefile
 	])
+AM_CONDITIONAL(WITH_SCRIPTS, false)
+AC_ARG_ENABLE(scripts, 
+        [  --enable-scripts  Install utility scripts in sysconfdir],
+        [AC_CONFIG_FILES([scripts/Makefile])
+	 AM_CONDITIONAL(WITH_SCRIPTS, true)])
 
 AC_OUTPUT

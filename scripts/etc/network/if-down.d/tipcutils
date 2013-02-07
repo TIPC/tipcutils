@@ -1,0 +1,41 @@
+#!/bin/sh
+
+# tipc if-down.d script by
+# Leandro Lucarella <llucarella@integratech.com.ar>
+# and 
+# Martin Peylo <debian@izac.de>
+
+TIPCCONFIG=/sbin/tipc-config
+NAME=tipcutils
+
+# exit if tipc-config is not installed
+if [ ! -x $TIPCCONFIG ]; then
+  exit 0
+fi
+
+# Exit if the configuration is not installed
+[ -e "/etc/default/$NAME" ] || exit 1
+
+# Read configuration variable file if it is present
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+if [ "$TIPC_CONFIGURED" != "true" ]; then
+	echo TIPC is not set as configured in \"/etc/default/$NAME\".
+	echo To configure TIPC, run \`dpkg-reconfigure -plow tipcutils\`!
+	echo Not shutting down interface \"$IFACE\".
+	exit 1
+fi
+
+if [ "$VERBOSITY" = "1" ]; then
+  TIPCCONFIG="$TIPCCONFIG -v"
+fi
+
+# there is no other media type possible *at this moment*
+IF_TIPC_MEDIA="eth"
+
+# disable the interface only if it is enabled
+if ($TIPCCONFIG -b|grep -q "$IF_TIPC_MEDIA:$IFACE"); then
+	echo Stopping TIPC on interface $IFACE
+	test "$VERBOSITY" = 1 && echo $TIPCCONFIG -bd="$IF_TIPC_MEDIA:$IFACE"
+	$TIPCCONFIG -bd="$IF_TIPC_MEDIA:$IFACE"
+fi
