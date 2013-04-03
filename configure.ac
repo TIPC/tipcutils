@@ -2,7 +2,7 @@ AC_PREREQ([2.4])
 AC_INIT([tipcutils], [2.0.5], [erik.hugne@ericsson.com])
 
 AM_INIT_AUTOMAKE([foreign])
-AM_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
 AC_PROG_CC
