@@ -287,7 +287,7 @@ again:
 		trln();
 #endif
 		i++;
-		if (pfd[0].revents & POLLHUP || pfd[1].revents & POLLHUP && !data_in_len)
+		if ((pfd[0].revents & POLLHUP || pfd[1].revents & POLLHUP) && !data_in_len)
 			break;
 		nanosleep(&((struct timespec) {.tv_nsec = 1000000 * delay}), NULL);
 	}
