@@ -47,6 +47,8 @@
 #include <linux/tipc_config.h>
 #include <linux/genetlink.h>
 #include <linux/version.h>
+#include <ifaddrs.h>
+#include <netdb.h>
 
 #include "config.h"
 
@@ -55,7 +57,7 @@
 typedef void (*VOIDFUNCPTR) ();
 
 /* constants */
-
+#define MEDIA_NAME_UDP "udp"
 #define MAX_COMMANDS 8
 #define MAX_TLVS_SPACE 33000		/* must be a multiple of 4 bytes */
 #define ADDR_AREA 30
@@ -1124,6 +1126,96 @@ static void set_linkset_window(char *args)
 	set_linkset_value(args, "window", TIPC_CMD_SET_LINK_WINDOW);
 }
 
+static int get_local_address(char *arg)
+{
+	char *opt;
+	struct ifaddrs *ifap, *ifa;
+	int i;
+	struct sockaddr_in *addr = NULL;
+	char ifaddr[16];
+	char tmp[TIPC_MAX_BEARER_NAME];
+	char *savep = tmp;
+
+	memcpy(tmp, arg, TIPC_MAX_BEARER_NAME);
+
+	opt = strsep(&savep , ":");
+	if (!opt || !savep)
+		return -EINVAL;
+	if (strcmp(opt, MEDIA_NAME_UDP) != 0)
+			return 0;
+	opt = strsep(&savep, ":");
+
+	/*If an IP address was specified, use it directly*/
+	if (inet_pton(AF_INET, opt, &addr))
+		return 0;
+
+	if (getifaddrs(&ifap)) {
+		perror("getifaddrs");
+		return -EINVAL;
+	}
+	/*Get the interface address*/
+	for(ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
+		if ((ifa->ifa_addr->sa_family == AF_INET) &&
+		   (strcmp(ifa->ifa_name, opt) == 0)) {
+			addr = ifa->ifa_addr;
+			break;
+		}
+	}
+	if (!addr) {
+		freeifaddrs(ifap);
+		return -ENODEV;
+	}
+	if (NULL==inet_ntop(AF_INET, &addr->sin_addr, ifaddr,
+	    sizeof(struct sockaddr_in))) {
+		freeifaddrs(ifap);
+		perror("ntop");
+		return -EINVAL;
+	}
+	if(savep)
+		sprintf(arg, "%s:%s:%s\0", MEDIA_NAME_UDP, ifaddr, savep);
+	else
+		sprintf(arg, "%s:%s\0", MEDIA_NAME_UDP, ifaddr);
+	freeifaddrs(ifap);
+	return 0;
+}
+
+static int resolve_bearer_endpoint(char *arg)
+{
+	char tmp[TIPC_MAX_BEARER_NAME];
+	char raddr[16];
+	char *delim;
+	struct sockaddr_in si_remote;
+	struct addrinfo hints = {0};
+	struct addrinfo *remote_info;
+	int i;
+
+	memcpy(tmp, arg, TIPC_MAX_BEARER_NAME);
+	/*Get the fourth token (remote address)*/
+	delim = strtok(tmp, ":");
+	for (i = 0; i < 3; i++)
+		if (!(delim = strtok(NULL, ":")))
+			return 0;
+	if (inet_pton(AF_INET, delim, &si_remote.sin_addr))
+		return 0;
+	hints.ai_family = AF_INET;
+	if (getaddrinfo(delim, NULL, &hints, &remote_info) != 0)
+		return -EINVAL;
+	/*Multiple addresses may be returned, but we just use the first one*/
+	inet_ntop(AF_INET, &((struct sockaddr_in*)remote_info->ai_addr)->sin_addr,
+		  raddr, 255);
+	delim = tmp;
+	for (i = 0; i < 3; i++)
+		delim = strchr(delim, ':')+1;
+	i = delim - tmp;
+	delim = strchr(delim,':');
+	snprintf(arg, i, tmp);
+	if (delim)
+		sprintf(arg + i - 1, ":%s%s",raddr,delim);
+	else
+		sprintf(arg + i - 1,":%s",raddr);
+	return 0;
+}
+
 
 static void enable_bearer(char *args)
 {
@@ -1131,6 +1223,7 @@ static void enable_bearer(char *args)
 	int tlv_space;
 	char *a;
 	char dummy;
+	int err;
 
 	while (args) {
 		__u32 domain = dest & 0xfffff000; /* defaults to own cluster */
@@ -1160,6 +1253,12 @@ static void enable_bearer(char *args)
 #else
 		req_tlv.disc_domain = htonl(domain);
 #endif
+		if (err = get_local_address(a) != 0)
+			fatal("Invalid bearer parameters (%d)\n",err);
+		if (err = resolve_bearer_endpoint(a) != 0) {
+			fatal("Could not resolve remote bearer endpoint name (%d)\n",
+			      err);
+		}
 		strncpy(req_tlv.name, a, TIPC_MAX_BEARER_NAME - 1);
 		req_tlv.name[TIPC_MAX_BEARER_NAME - 1] = '\0';
 
@@ -1176,12 +1275,15 @@ static void disable_bearer(char *bname)
 {
 	char bearer_name[TIPC_MAX_BEARER_NAME];
 	int tlv_space;
+	int err;
 
 	strncpy(bearer_name, bname, TIPC_MAX_BEARER_NAME - 1);
 	bearer_name[TIPC_MAX_BEARER_NAME - 1] = '\0';
 
 	confirm("Disable bearer <%s>%s ? [Y/n]", bearer_name, for_dest());
 
+	if (err = get_local_address(bearer_name) != 0)
+		fatal("Invalid bearer parameters (%d)\n",err);
 	tlv_space = TLV_SET(tlv_area, TIPC_TLV_BEARER_NAME,
 	                    bearer_name, sizeof(bearer_name));
 	tlv_space = do_command(TIPC_CMD_DISABLE_BEARER, tlv_area, tlv_space,
