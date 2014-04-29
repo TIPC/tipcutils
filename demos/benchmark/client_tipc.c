@@ -6,7 +6,7 @@
  *
  * ------------------------------------------------------------------------
  *
- * Copyright (c) 2001-2005, Ericsson Research Canada
+ * Copyright (c) 2001-2005, 2014, Ericsson AB
  * Copyright (c) 2004-2006, 2010-2011 Wind River Systems
  * All rights reserved.
  * Redistribution and use in source and binary forms, with or without
@@ -36,407 +36,350 @@
  * ------------------------------------------------------------------------
  */
 
-#include <getopt.h>
-#include <netinet/in.h>
-#include <sched.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/poll.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <linux/tipc.h>
+#include "common_tipc.h"
 
-#define MAX_DELAY 300000		/* inactivity limit [in ms] */
-#define MCLIENT_NAME 16666
-#define SERVER_NAME  17777
-#define CLIENT_NAME  18888
 #define TERMINATE 1
-#define DEFAULT_CLIENTS 8
+#define DEFAULT_CLIENTS   8
+#define DEFAULT_LAT_MSGS  200000
+#define DEFAULT_THRU_MSGS 200000
+#define DEFAULT_BURST     16
+#define DEFAULT_MSGLEN    64
 
-#define DEBUG 0
 
-#define dprintf(fmt, arg...)  do {if (DEBUG) printf(fmt, ## arg);} while(0)
-
-unsigned char buf[TIPC_MAX_USER_MSG_SIZE] = {0,};
-
-struct client_cmd {
-	unsigned int cmd; /* 0: exec, 1: terminate */
-	unsigned long long msg_size;
-	unsigned long long msg_count;
-	unsigned long long burst_size;
-	unsigned int client_no;
+static const struct sockaddr_tipc clnt_ctrl_addr = {
+	.family                  = AF_TIPC,
+	.addrtype                = TIPC_ADDR_NAMESEQ,
+	.addr.nameseq.type       = CLNT_CTRL_NAME,
+	.addr.nameseq.lower      = 0,
+	.addr.nameseq.upper      = 0,
+	.scope                   = TIPC_NODE_SCOPE
 };
 
-__u32 wait_for_server(__u32 name_type, __u32 name_instance, int wait)
+static const struct sockaddr_tipc master_clnt_addr = {
+	.family                  = AF_TIPC,
+	.addrtype                = TIPC_ADDR_NAME,
+	.addr.name.name.type     = MASTER_NAME,
+	.addr.name.name.instance = 1,
+	.scope                   = TIPC_ZONE_SCOPE,
+	.addr.name.domain        = 0
+};
+
+static int master_clnt_sd;
+static int master_srv_sd;
+static uint client_id;
+static unsigned char *buf = NULL;
+static int select_ip(struct srv_info *sinfo);
+static void stream_messages(int peer_sd, int clnt_id,
+			    int msgcnt, int msglen,
+			    int bounce);
+
+
+#define CLNT_EXEC         3
+#define CLNT_TERM         4
+struct master_client_cmd {
+	__u32 cmd;
+	__u32 msglen;
+	__u32 msgcnt;
+	__u32 bounce;
+};
+
+static void master_to_client(uint cmd, uint msglen, uint msgcnt, uint bounce)
 {
-	struct sockaddr_tipc topsrv;
-	struct tipc_subscr subscr;
-	struct tipc_event event;
+	struct master_client_cmd c;
 
-	int sd = socket(AF_TIPC, SOCK_SEQPACKET, 0);
+	c.cmd = htonl(cmd);
+	c.msglen = htonl(msglen);
+	c.msgcnt = htonl(msgcnt);
+	c.bounce = htonl(bounce);
+	if (sizeof(c) != sendto(master_clnt_sd, &c, sizeof(c), 0,
+				(struct sockaddr *)&clnt_ctrl_addr,
+				sizeof(clnt_ctrl_addr)))
+		die("Unable to send cmd %u to clients\n", cmd);
+}
 
-	memset(&topsrv, 0, sizeof(topsrv));
-	topsrv.family = AF_TIPC;
-	topsrv.addrtype = TIPC_ADDR_NAME;
-	topsrv.addr.name.name.type = TIPC_TOP_SRV;
-	topsrv.addr.name.name.instance = TIPC_TOP_SRV;
+static void client_from_master(uint *cmd, uint *msglen, uint *msgcnt, uint *bounce)
+{
+	struct master_client_cmd c;
 
-	/* Connect to topology server */
-
-	if (0 > connect(sd, (struct sockaddr *)&topsrv, sizeof(topsrv))) {
-		perror("Client: failed to connect to topology server");
-		exit(1);
-	}
-
-	subscr.seq.type = htonl(name_type);
-	subscr.seq.lower = htonl(name_instance);
-	subscr.seq.upper = htonl(name_instance);
-	subscr.timeout = htonl(wait);
-	subscr.filter = htonl(TIPC_SUB_SERVICE);
-
-	if (send(sd, &subscr, sizeof(subscr), 0) != sizeof(subscr)) {
-		perror("Client: failed to send subscription");
-		exit(1);
-	}
-	/* Now wait for the subscription to fire */
-
-	if (recv(sd, &event, sizeof(event), 0) != sizeof(event)) {
-		perror("Client: failed to receive event");
-		exit(1);
-	}
-	if (event.event != htonl(TIPC_PUBLISHED)) {
-		printf("Client: server {%u,%u} not published within %u [s]\n",
-		       name_type, name_instance, wait/1000);
-		exit(1);
-	}
-
-	close(sd);
-
-	return ntohl(event.port.node);
+	if (wait_for_msg(master_sd))
+		die("Client: No command from master\n");
+	if (recv(master_sd, &c, sizeof(c), 0) != sizeof(c))
+		die("Client: Invalid msg msg from master\n");
+	*cmd = ntohl(c.cmd);
+	*msglen = ntohl(c.msglen);
+	*msgcnt = ntohl(c.msgcnt);
+	*bounce = ntohl(c.bounce);
 }
 
 
-int wait_for_msg(int sd)
-{
-	struct pollfd pfd;
-	int pollres;
-	int res;
+#define CLNT_READY    1
+#define CLNT_FINISHED 2
+struct client_master_cmd {
+	__u32 cmd;
+};
 
-	pfd.events = ~POLLOUT;
-	pfd.fd = sd;
-	pollres = poll(&pfd, 1, MAX_DELAY);
-	if (pollres < 0)
-		res = -1;
-	else if (pollres == 0)
-		res = -2;
-	else
-		res = (pfd.revents & POLLIN) ? 0 : pfd.revents;
-	return res;
+static void client_to_master(uint cmd)
+{
+	struct client_master_cmd c;
+
+	c.cmd = htonl(cmd);
+	if (sizeof(c) != sendto(master_sd, &c, sizeof(c), 0,
+				(struct sockaddr *)&master_clnt_addr,
+				sizeof(master_clnt_addr)))
+		die("Client: Unable to send msg to master\n");
 }
 
-static unsigned long long elapsedmillis(struct timeval *from)
+static void master_from_client(uint *cmd)
+{
+	struct client_master_cmd c;
+
+	if (wait_for_msg(master_clnt_sd))
+		die("Client: No command from master\n");
+	
+	if (recv(master_clnt_sd, &c, sizeof(c), 0) != sizeof(c))
+		die("Client: Invalid msg msg from master\n");
+	*cmd = ntohl(c.cmd);
+}
+
+static void master_to_srv(uint cmd, uint msglen, uint msgcnt, uint echo)
+{
+	struct master_srv_cmd c;
+
+	c.cmd = htonl(cmd);
+	c.msglen = htonl(msglen);
+	c.msgcnt = htonl(msgcnt);
+	c.echo = htonl(echo);
+	if (sizeof(c) != sendto(master_srv_sd, &c, sizeof(c), 0,
+				(struct sockaddr *)&srv_ctrl_addr,
+				sizeof(srv_ctrl_addr)))
+		die("Unable to send cmd %u to servers\n", cmd);
+}
+
+static void master_from_srv(uint *cmd, struct srv_info *sinfo, __u32 *tipc_addr)
+{
+	struct srv_to_master_cmd c;
+
+	if (wait_for_msg(master_srv_sd))
+		die("Master: No info from server\n");
+	
+	if (sizeof(c) != recv(master_srv_sd, &c, sizeof(c), 0))
+		die("Master: Invalid info msg from server\n");
+	
+	*cmd = ntohl(c.cmd);
+	if (tipc_addr)
+		*tipc_addr = ntohl(c.tipc_addr);
+	if (sinfo)
+		memcpy(sinfo, &c.sinfo, sizeof(*sinfo));
+}
+
+static void usage(char *app)
+{
+	fprintf(stderr, "Usage:\n");
+	fprintf(stderr," %s ", app);
+	fprintf(stderr, "[-l <lat msgs>] [-t <tput <msgs>]"
+                         " [-c <num conns>] [-p <tipc | tcp>]\n");
+	fprintf(stderr, "\tmsgs to transfer for latency measurement (default %u)\n",
+		DEFAULT_LAT_MSGS);
+	fprintf(stderr, "\tmsgs to transfer for throughput measurement (default %u)\n",
+		DEFAULT_THRU_MSGS);
+	fprintf(stderr, "\tnumber of connections defaults to %d\n", DEFAULT_CLIENTS);
+	fprintf(stderr, "\tprotocol to measure (defaults to tipc)\n");
+}
+
+static unsigned long long elapsednanos(struct timeval *from)
 {
 	struct timeval now;
 
 	gettimeofday(&now, 0);
 
 	if (now.tv_usec >= from->tv_usec)
-		return((now.tv_sec - from->tv_sec) * 1000 +
-		       (now.tv_usec - from->tv_usec) / 1000);
+		return((now.tv_sec - from->tv_sec) * 1000000000 +
+		       (now.tv_usec - from->tv_usec) * 1000);
 	else
-		return((now.tv_sec - 1 - from->tv_sec) * 1000 +
-		       (now.tv_usec + 1000000 - from->tv_usec) / 1000);
+		return((now.tv_sec - 1 - from->tv_sec) * 1000000000 +
+		       (now.tv_usec + 1000000 - from->tv_usec) * 1000);
 }
 
-void clientmain(unsigned int client_id)
+static void print_throughput_header(void)
 {
-	struct sockaddr_tipc dest_addr;
-	struct sockaddr_tipc server_addr;
-	struct sockaddr_tipc client_master_addr;
-	int server_comm_sd;
-	int master_comm_sd;
+	printf("+----------------------------------------------"
+	       "-----------------------------------------------+\n");
+	printf("|  Msg Size  | #     |  # Msgs/  |  Elapsed  |"
+	       "                    Throughput                  |\n");
+	printf("|  [octets]  | Conns |    Conn   |  [ms]     +"
+	       "------------------------------------------------+\n");
+	printf("|            |       |           |           | "
+	       "Total [Msg/s] | Total [Mb/s] | Per Conn [Mb/s] |\n");
+	printf("+-----------------------------------------------"
+	       "----------------------------------------------+\n");
+}
+
+static void print_latency_header(void)
+{
+	printf("+----------------------------------------"
+	       "-----------------------------+\n");
+	printf("| Msg Size [octets] |   # Msgs   |"
+	       " Elapsed [ms] | Avg round-trip [us] |\n");
+	printf("+-----------------------------------------"
+	       "----------------------------+\n");
+}
+
+static void client_create(unsigned int clnt_id, ushort tcp_port, int tcp_addr)
+{
+	int peer_sd;
 	int imp = TIPC_MEDIUM_IMPORTANCE;
-	__u32 server_num = 0;
-	unsigned long long counter = 0;
-	unsigned long long init_cnt = 0;
-	unsigned long long burst;
-	int wait_err;
-	int sz;
-	struct client_cmd cmd;
+	uint cmd, msglen, msgcnt, bounce;
+	struct sockaddr_in tcp_dest;
 
-	/* Establish socket used for communication with client master */
+	fflush(stdout);
+	if (fork())
+		return;
+	dprintf("Client %u created\n", clnt_id);
+	client_id = clnt_id;
+	close(master_clnt_sd);
+	
+	/* Create socket for communication with master: */
 
-	master_comm_sd = socket(AF_TIPC, SOCK_RDM, 0);
-	if (master_comm_sd < 0) {
-		printf("Client %u: Can't create socket to master\n", client_id);
-		perror(NULL);
-		exit(1);
-	}
+	master_sd = socket(AF_TIPC, SOCK_RDM, 0);
+	if (master_sd < 0)
+		die("Client %u: Can't create socket to master\n", clnt_id);
+	
+	if (bind(master_sd, (struct sockaddr *)&clnt_ctrl_addr, sizeof(clnt_ctrl_addr)))
+		die("Client %u: Failed to bind\n", clnt_id);
 
-	dest_addr.family = AF_TIPC;
-	dest_addr.addrtype = TIPC_ADDR_NAME;
-	dest_addr.scope = TIPC_NODE_SCOPE;
-	dest_addr.addr.name.name.type = CLIENT_NAME;
-	dest_addr.addr.name.name.instance = client_id;
+	/* Establish connection to benchmark server */
 
-	if (bind(master_comm_sd, (struct sockaddr *)&dest_addr,
-	                sizeof(dest_addr))) {
-		printf("Client %u: Failed to bind\n", client_id);
-		perror(NULL);
-		exit(1);
-	}
+	if (!tcp_port) {
 
-	/* Establish connection to benchmark server client_id */
+		peer_sd = socket(AF_TIPC, SOCK_STREAM, 0);
+		if (peer_sd < 0)
+			die("Client %u: Can't create socket to server\n", clnt_id);
+		
+		if (setsockopt(peer_sd, SOL_TIPC, TIPC_IMPORTANCE,
+			       &imp, sizeof(imp)) != 0)
+			die("Client %u: Can't set socket options\n", clnt_id);
 
-	dprintf("Client %u: started, waiting for server...\n", client_id);
+		/* Establish connection to server */
 
-	server_addr.family = AF_TIPC;
-	server_addr.addrtype = TIPC_ADDR_NAME;
-	server_addr.addr.name.name.type = SERVER_NAME;
-	server_addr.addr.name.name.instance = 0;
-	server_addr.addr.name.domain = 0;
-
-	server_comm_sd = socket(AF_TIPC, SOCK_SEQPACKET, 0);
-	if (server_comm_sd < 0) {
-		printf("Client %u: Can't create socket to server\n", client_id);
-		perror(NULL);
-		exit(1);
-	}
-
-	if (setsockopt(server_comm_sd, SOL_TIPC, TIPC_IMPORTANCE,
-	                &imp, sizeof(imp)) != 0) {
-		printf("Client %u: Can't set socket options\n", client_id);
-		perror(NULL);
-		exit(1);
-	}
-
-	/* Try both ways of establishing a connection */
-
-	if (client_id & 1) {
-		dprintf("Client %u: sending setup ...\n", client_id);
-		if (sendto(server_comm_sd, &server_num, 4, 0,
-		                (struct sockaddr *)&server_addr,
-		                sizeof(server_addr)) <= 0) {
-			printf("Client %u: sending setup failed\n", client_id);
-			perror(NULL);
-			exit(1);
-		}
+		if (connect(peer_sd, (struct sockaddr*)&srv_lstn_addr,
+			    sizeof(srv_lstn_addr)) < 0)
+			die("Client %u: connect failed\n", clnt_id);
 	} else {
-		dprintf("Client %u: doing connect ...\n", client_id);
-		if (connect(server_comm_sd,
-		                (struct sockaddr*)&server_addr,
-		                sizeof(server_addr)) < 0) {
-			printf("Client %u: connect failed\n", client_id);
-			perror(NULL);
-			exit(1);
-		}
-		if (send(server_comm_sd, &server_num, 4, 0) <= 0) {
-			printf("Client %u: sending setup failed\n", client_id);
-			perror(NULL);
-			exit(1);
-		}
+
+		if ((peer_sd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+			die("TCP Server: failed to create client socket");
+		memset(&tcp_dest, 0, sizeof(tcp_dest));
+		tcp_dest.sin_family = AF_INET;
+		tcp_dest.sin_addr.s_addr = htonl(tcp_addr);
+		tcp_dest.sin_port = htons(tcp_port);
+		dprintf("TCP Client %u: using %s:%u \n", clnt_id,
+			inet_ntoa(tcp_dest.sin_addr),tcp_port);		
+		if (0 > connect(peer_sd, (struct sockaddr *) &tcp_dest, 
+				sizeof(tcp_dest)))
+			die("TCP connect() failed");
 	}
 
-	dprintf("Client %u: getting ack from server ...\n", client_id);
-	wait_err = wait_for_msg(server_comm_sd);
-	if (wait_err) {
-		printf("Client %u: No acknowledgement from server (err=%u)\n",
-		       client_id, wait_err);
-		exit(1);
-	}
-	if (recv(server_comm_sd, &server_num, 4, 0) != 4) {
-		printf("Client %u: Invalid acknowledgement from server\n",
-		       client_id);
-		perror(NULL);
-		exit(1);
-	}
-
-	/* Notify client master that we're ready to run tests */
-
-	client_master_addr.family = AF_TIPC;
-	client_master_addr.addrtype = TIPC_ADDR_NAME;
-	client_master_addr.addr.nameseq.type = MCLIENT_NAME;
-	client_master_addr.addr.name.name.instance = 0;
-	client_master_addr.addr.name.domain = 0;
-
-	dprintf("Client %u: Notifying master of connection to server\n",
-	        client_id);
-	server_num = ntohl(server_num);
-	if (sendto(master_comm_sd, &server_num, 4, 0,
-	                (struct sockaddr *)&client_master_addr,
-	                sizeof(client_master_addr)) <= 0) {
-		printf("Client %u: Unable to notify master\n", client_id);
-		perror(NULL);
-		exit(1);
-	}
+	/* Notify master that we're ready to run tests */
+	client_to_master(CLNT_READY);
 
 	/* Process commands from client master until told to shut down */
 
 	for (;;) {
-
-		/* Get next command from client master */
-
-		wait_err = wait_for_msg(master_comm_sd);
-		if (wait_err) {
-			printf("Client %u: no command from master (err=%u)\n",
-			       client_id, wait_err);
-			exit(1);
-		}
-		sz = recv(master_comm_sd, &cmd, sizeof(cmd), 0);
-		if (sz != sizeof(cmd)) {
-			printf("Client %u: rxd illegal command\n", client_id);
-			exit(1);
-		}
-		if (cmd.cmd == TERMINATE) {
-			shutdown(server_comm_sd, SHUT_RDWR);
-			close(server_comm_sd);
-			close(master_comm_sd);
-			dprintf("Client %u:last msg was %llu\n",
-			        client_id, (init_cnt - counter));
+		client_from_master(&cmd, &msglen, &msgcnt, &bounce);
+		if (cmd == CLNT_TERM) {
+			shutdown(peer_sd, SHUT_RDWR);
+			close(peer_sd);
+			close(master_sd);
 			exit(0);
 		}
 
-		/* Execute command from client master */
+		/* Execute command */
+		stream_messages(peer_sd, client_id, msgcnt, msglen, bounce);
 
-		dprintf("Client %u: rec cmd: bounce %llu messages of size %llu\n",
-		        client_id, cmd.msg_count, cmd.msg_size);
-		counter = cmd.msg_count;
-		burst = 0;
+		/* Done. Tell master */
+		client_to_master(CLNT_FINISHED);
+	}
+}
 
-		do {
-			unsigned long long msg_len;
-
-			if (burst >= cmd.burst_size) {
-				sched_yield();
-				burst = 0;
-			}
-
-			msg_len = send(server_comm_sd, buf, cmd.msg_size, 0);
-			if (msg_len != cmd.msg_size) {
-				printf("Client %u: send failed\n", client_id);
-				perror(NULL);
-				exit(1);
-			}
-
-			wait_err = wait_for_msg(server_comm_sd);
-			if (wait_err) {
-				printf("Client %u: no response from server "
-				       "(err=%u)\n", client_id, wait_err);
-				exit(1);
-			}
-
-			msg_len = recv(server_comm_sd, buf, cmd.msg_size, 0);
-			if (msg_len != cmd.msg_size) {
-				printf("Client %u: invalid response from server,"
-				       " (expected %lli, got %lli)\n",
-				       client_id, cmd.msg_size, msg_len);
-				perror(NULL);
-				exit(1);
-			}
-
-			burst++;
-		} while (counter--);
-
-		/* Command is done, tell client master */
-
-		dprintf("Client %u: reporting TASK_FINISHED to master\n",
-		        client_id);
-		cmd.client_no = client_id;
-		if (sendto(master_comm_sd, &cmd, sizeof(cmd), 0,
-		                (struct sockaddr *)&client_master_addr,
-		                sizeof(client_master_addr)) <= 0) {
-			printf("Client %u: failed to send TASK_FINISHED msg\n",
-			       client_id);
-			perror(NULL);
-			exit(1);
+static void stream_messages(int peer_sd, int clnt_id, int msgcnt,
+			    int msglen, int bounce)
+{
+	int sent = 0;
+	int yield = (1 << 21) / msglen;
+	dprintf("Cli %u: bouncing %u msg of len %u, bounce = %u\n",
+		client_id, msgcnt,msglen,bounce);
+	while (sent < msgcnt) {
+		if (--yield == 0) {
+			sched_yield();
+			yield = (1 << 22) / msglen;
 		}
-	}
-}
+		sent++;
+		if (msglen != send(peer_sd, buf, msglen, 0))
+			die("Client %u: send failed\n", clnt_id);
 
-static void sig_alarm(int signo)
-{
-	printf("TIPC benchmark server timeout, exiting...\n");
-	exit(0);
-}
+		if (!bounce)
+			continue;
 
-static uint own_node(int sd)
-{
-	struct sockaddr_tipc addr;
-	socklen_t sz = sizeof(addr);
-
-	if (getsockname(sd, (struct sockaddr *)&addr, &sz) < 0) {
-		perror("Failed to get sock address\n");
-		exit(1);
-	}
-	return addr.addr.id.node;
-}
-
-static void usage(char *app)
-{
-	fprintf(stderr, "Usage:\n");
-	fprintf(stderr,
-	        "  %s [-l <lat mult>] [-t <tput mult>] [-n <num clients>]\n",
-	        app);
-	fprintf(stderr, "\tlatency test multiplier defaults to 1\n");
-	fprintf(stderr, "\tthroughput test multiplier defaults to 1\n");
-	fprintf(stderr, "\tnumber of clients defaults to %d\n", DEFAULT_CLIENTS);
+		if (wait_for_msg(peer_sd))
+			die("Client %u: no resp from srv at %u\n", clnt_id, sent);
+			
+		if (msglen != recv(peer_sd, buf, msglen, MSG_WAITALL))
+			die("Client %u: invalid msg from server \n", clnt_id);
+	};
+	dprintf("cli %u: reporting FINISHED to master\n", clnt_id);
 }
 
 /*
- * Client master
+ * Master
  */
-
 int main(int argc, char *argv[], char *dummy[])
 {
 	int c;
-	int l_mult = 1;
-	int t_mult = 1;
-	int req_clients = DEFAULT_CLIENTS;
-
-	__u32 server_node;
-	int client_master_sd;
-	struct sockaddr_tipc dest_addr;
-	pid_t child_pid;
+	uint cmd;
+	uint latency_transf = DEFAULT_LAT_MSGS;
+	uint thruput_transf = DEFAULT_THRU_MSGS;
+	uint req_clients = DEFAULT_CLIENTS;
+	uint first_msglen = DEFAULT_MSGLEN;
+	uint last_msglen = TIPC_MAX_USER_MSG_SIZE;
+	unsigned long long msglen;
 	unsigned long long num_clients;
-	unsigned int client_id;
-	unsigned int server_num;
-	struct client_cmd cmd = {0,0,0,0,0};
-	int wait_err;
+	struct timeval start_time;
+	unsigned long long elapsed;
+	unsigned long long msgcnt;
+	unsigned long long iter;
+	uint clnt_id;
+	uint conn_typ = TIPC_CONN;
+	ushort tcp_port = 0;
+	uint tcp_addr = 0;
+	struct srv_info sinfo;
+	__u32 peer_tipc_addr;
+
+	setbuf(stdout, NULL);
 
 	/* Process command line arguments */
 
-	while ((c = getopt(argc, argv, "n:t:l:h")) != -1) {
+	while ((c = getopt(argc, argv, "l:t:c:p:m:")) != -1) {
 		switch (c) {
 		case 'l':
-			l_mult = atoi(optarg);
-			if (l_mult < 0) {
-				fprintf(stderr,
-				        "Invalid latency multiplier [%d]\n",
-				        l_mult);
-				exit(1);
-			}
+			latency_transf = atoi(optarg);
 			break;
 		case 't':
-			t_mult = atoi(optarg);
-			if (t_mult < 0) {
-				fprintf(stderr,
-				        "Invalid throughput multiplier [%d]\n",
-				        t_mult);
-				exit(1);
-			}
+			thruput_transf = atoi(optarg);
 			break;
-		case 'n':
+		case 'm':
+			first_msglen = atoi(optarg);
+			last_msglen = first_msglen;
+			break;
+		case 'c':
 			req_clients = atoi(optarg);
-			if (req_clients <= 0) {
-				fprintf(stderr, "Invalid number of clients "
-				        "[%d]\n", req_clients);
-				exit(1);
-			}
+			if (req_clients == 0)
+				die("We need at least one connection\n");
+			break;
+		case 'p':
+			if (!strcmp("tcp", optarg))
+				conn_typ = TCP_CONN;
+			else if (strcmp("tipc", optarg))
+				die("Invalid protocol; must be 'tcp' or 'tipc'\n");
 			break;
 		default:
 			usage(argv[0]);
@@ -444,283 +387,225 @@ int main(int argc, char *argv[], char *dummy[])
 		}
 	}
 
-	/* Wait for benchmark server to appear */
+	buf = malloc(last_msglen);
+	if (!buf)
+		die("Unable to allocate buffer\n");
 
-	server_node = wait_for_server(SERVER_NAME, 0, MAX_DELAY);
+	/* Create socket used to communicate with clients */
 
-	/* Create socket used to communicate with child clients */
+	master_clnt_sd = socket(AF_TIPC, SOCK_RDM, 0);
+	if (master_clnt_sd < 0)
+		die("Master: Can't create client ctrl socket\n");
 
-	client_master_sd = socket(AF_TIPC, SOCK_RDM, 0);
-	if (client_master_sd < 0) {
-		printf("Client master: Can't create main client socket\n");
-		perror(NULL);
-		exit(1);
+	if (bind(master_clnt_sd, (struct sockaddr *)&master_clnt_addr, 
+		 sizeof(master_clnt_addr)))
+		die("Master: Failed to bind to clientcontrol address\n");
+
+	/* Create socket used to communicate with servers */
+
+	master_srv_sd = socket(AF_TIPC, SOCK_RDM, 0);
+	if (master_srv_sd < 0)
+		die("Master: Can't create server ctrl socket\n");
+
+	if (bind(master_srv_sd, (struct sockaddr *)&master_srv_addr, 
+		 sizeof(master_srv_addr)))
+		die("Master: Failed to bind to server control address\n");
+
+	/* Wait for benchmark server to appear: */
+
+	wait_for_name(SRV_CTRL_NAME, 0, MAX_DELAY);
+	master_to_srv(RESTART, 0, 0, 0);
+	sleep(1);
+
+	/* Send connection type and buffer allocation size to server: */
+	master_to_srv(conn_typ, last_msglen, 0, 0);
+
+	/* Wait for ack */
+
+	master_from_srv(&cmd, &sinfo, &peer_tipc_addr);
+	if (peer_tipc_addr != own_node()) {
+		if (latency_transf == DEFAULT_LAT_MSGS)
+			latency_transf /= 10;
+		if (thruput_transf == DEFAULT_THRU_MSGS)
+			thruput_transf /= 10;			
 	}
+	
+	tcp_port = ntohs(sinfo.tcp_port);
+	tcp_addr = select_ip(&sinfo);
 
-	dest_addr.family = AF_TIPC;
-	dest_addr.addrtype = TIPC_ADDR_NAME;
-	dest_addr.scope = TIPC_NODE_SCOPE;
-	dest_addr.addr.name.name.type = MCLIENT_NAME;
-	dest_addr.addr.name.name.instance = 0;
-	if (bind(client_master_sd, (struct sockaddr *)&dest_addr,
-	                sizeof(dest_addr))) {
-		printf("Client master: Failed to bind\n");
-		perror(NULL);
-		exit(1);
+	printf("****** TIPC Benchmark Client Started ******\n");
+	if (conn_typ == TCP_CONN) {
+		struct in_addr s;
+		s.s_addr = ntohl(tcp_addr);
+		printf("Using server address %s:%d\n", 
+		       inet_ntoa(s),tcp_port);
 	}
-
-	printf("****** TIPC benchmark client started ******\n");
-
 	num_clients = 0;
 
-	dest_addr.addr.name.name.type = CLIENT_NAME;
-	dest_addr.addr.name.domain = 0;
-
 	/* Optionally run latency test */
-
-	if (!l_mult)
+	if (!latency_transf)
 		goto end_latency;
 
-	printf("Client master: Starting Latency Benchmark\n");
+	printf("Transferring %u messages in %s Latency Benchmark\n", 
+	       latency_transf, tcp_port ? "TCP" : "TIPC");
 
-	/* Create first child client */
+	/* Create first child client and wait until it is connected */
+	client_create(++num_clients, tcp_port, tcp_addr);
+	master_from_client(&cmd);
+	sleep(1);
+	print_latency_header();
+	iter = 1;
 
-	fflush(stdout);
-	child_pid = fork();
-	if (child_pid < 0) {
-		printf ("Client master: fork failed\n");
-		perror(NULL);
-		exit(1);
-	}
-	num_clients++;
-	if (!child_pid) {
-		close(client_master_sd);
-		clientmain(num_clients);
-		/* Note: child client never returns */
-	}
+	for (msglen = first_msglen; msglen <= last_msglen; msglen *= 4) {
 
-	dprintf("Client master: waiting for confirmation from client 1\n");
-	wait_err = wait_for_msg(client_master_sd);
-	if (wait_err) {
-		printf("Client master: no confirmation from client 1 (err=%u)\n",
-		       wait_err);
-		exit(1);
-	}
-	if (recv(client_master_sd, buf, 4, 0) != 4) {
-		printf ("Client master: confirmation failure from client 1\n");
-		perror(NULL);
-		exit(1);
-	}
-	server_num = *(unsigned int *)buf;
+		unsigned long long latency;
+		unsigned long long latency_us;
+		unsigned long long latency_dec;
 
-	dprintf("Client master: client 1 linked to server %i\n", server_num);
+		msgcnt = latency_transf / iter++;
 
-	/* Run latency test */
+		printf("| %16llu  | %9llu  |", msglen, msgcnt);
 
-	cmd.msg_size = 64;
-	cmd.msg_count = 10240 * l_mult;
-	cmd.burst_size = cmd.msg_count;
-	while (cmd.msg_size <= TIPC_MAX_USER_MSG_SIZE) {
-		struct client_cmd ccmd;
-		int sz;
-		struct timeval start_time;
-		unsigned long long elapsed;
+		/* Tell server and client instances what to do: */
+		master_to_srv(RCV_MSG_LEN, msglen, msgcnt, 1);
+		master_from_srv(&cmd, 0, 0);
 
-		printf("Exchanging %llu messages of size %llu octets (burst size %llu)\n",
-		       cmd.msg_count, cmd.msg_size, cmd.burst_size);
-		dprintf("   client 1  <--> server %d\n", server_num);
-
-		cmd.client_no = 1;
-		dest_addr.addr.name.name.instance = 1;
 		gettimeofday(&start_time, 0);
+		master_to_client(CLNT_EXEC, msglen, msgcnt, 1);
 
-		if (sendto(client_master_sd, &cmd, sizeof(cmd), 0,
-		                (struct sockaddr *)&dest_addr, sizeof(dest_addr))
-		                != sizeof(cmd)) {
-			printf("Client master: Can't send to client 1\n");
-			perror(NULL);
-			exit(1);
-		}
+		/* Wait until client and server are finished:*/
+		master_from_client(&cmd);
+		master_from_srv(&cmd, 0, 0);
 
-		wait_err = wait_for_msg(client_master_sd);
-		if (wait_err) {
-			printf("Client master: No result from client 1 (err=%u)\n",
-			       wait_err);
-			exit(1);
-		}
-		sz = recv(client_master_sd, &ccmd, sizeof(ccmd), 0);
-		elapsed = elapsedmillis(&start_time);
-		if (sz != sizeof(ccmd)) {
-			printf("Client master: invalid result from client 1\n");
-			perror(NULL);
-			exit(1);
-		}
+		/* Calculate and present result: */
+		elapsed = elapsednanos(&start_time);
+		latency = elapsed/msgcnt;
+		latency_us = latency/1000;
+		latency_dec = latency%100;
 
-		dprintf("Client master:rec cmd msg of size %i [%u:%llu:%llu:%u]\n",
-		        sz,ccmd.cmd,ccmd.msg_size,ccmd.msg_count,ccmd.client_no);
-		dprintf("Client master: received TASK_FINISHED from client 1\n");
-
-		printf("... took %llu ms (round-trip avg/msg: %llu us)\n",
-		       elapsed, (elapsed * 1000)/cmd.msg_count);
-
-		cmd.msg_size *= 4;
-		cmd.msg_count /= 4;
-		cmd.burst_size /= 4;
+		printf(" %11llu  | %15llu.%llu  |\n", 
+		       elapsed/1000000, latency_us, latency_dec);
+		printf("+--------------------------------------------------"
+		       "-------------------+\n");
 	}
-
-	printf("Client master: Completed Latency Benchmark\n");
+	printf("Completed Latency Benchmark\n\n");
 
 end_latency:
 
 	/* Optionally run throughput test */
 
-	if (!t_mult)
+	if (!thruput_transf)
 		goto end_thruput;
 
-	printf("Client master: Starting Throughput Benchmark\n");
+	printf("Transferring %u messages in %s Throughput Benchmark\n", 
+	       thruput_transf, tcp_port ? "TCP" : "TIPC");
 
-	/* Create remaining child clients */
+	/* Create remaining child clients. For each, wait until it is ready */
 
 	while (num_clients < req_clients) {
-		int sz;
-
-		fflush(stdout);
-		child_pid = fork();
-		if (child_pid < 0) {
-			printf ("Client master: fork failed\n");
-			perror(NULL);
-			exit(1);
-		}
-		num_clients++;
-		if (!child_pid) {
-			close(client_master_sd);
-			clientmain(num_clients);
-			/* Note: child client never returns */
-		}
-
-		dprintf ("Client master: waiting for confirmation "
-		         "from client %llu\n", num_clients);
-		wait_err = wait_for_msg(client_master_sd);
-		if (wait_err) {
-			printf("Client master: no confirmation from client %llu "
-			       "(err=%u)\n", num_clients, wait_err);
-			exit(1);
-		}
-		sz = recv(client_master_sd, buf, 4, 0);
-		if (sz != 4) {
-			printf("Client master: confirmation failure "
-			       "from client_id %llu\n", num_clients);
-			exit(1);
-		}
-		server_num = *(unsigned int*)buf;
-
-		dprintf("Client master: client %llu linked to server %i\n",
-		        num_clients, server_num);
-
+		client_create(++num_clients, tcp_port, tcp_addr);
+		master_from_client(&cmd);
 	}
-	dprintf("Client master: all clients and servers started\n");
+
+	dprintf("Master: all clients and servers started\n");
 	sleep(2);   /* let console printfs flush before continuing */
 
-	/* Get child clients to run throughput test */
+	print_throughput_header();
+	iter = 1;
 
-	cmd.msg_size = 64;
-	cmd.msg_count = 10240 * t_mult;
-	cmd.burst_size = 10240/5;
-	while (cmd.msg_size < TIPC_MAX_USER_MSG_SIZE) {
-		struct timeval start_time;
-		unsigned long long elapsed;
+	for (msglen = first_msglen; msglen <= last_msglen; msglen *= 4) {
+
+		unsigned long long thruput;
 		unsigned long long msg_per_sec;
-		unsigned long long procs;
+		int i;
 
-		printf("Exchanging %llu*%llu messages of size %llu octets (burst size %llu)\n",
-		       num_clients, cmd.msg_count, cmd.msg_size, cmd.burst_size);
+		msgcnt = thruput_transf / iter++;
+
+		printf("| %9llu  | %4llu  | %8llu  ", msglen, num_clients, msgcnt);
 
 		gettimeofday(&start_time, 0);
 
-		for (client_id = 1; client_id <= num_clients; client_id++) {
-			cmd.client_no = client_id;
-			dest_addr.addr.name.name.instance = client_id;
-			if (sendto(client_master_sd, &cmd, sizeof(cmd), 0,
-			                (struct sockaddr *)&dest_addr,
-			                sizeof(dest_addr)) != sizeof(cmd)) {
-				printf("Client master: can't send to client %u\n",
-				       client_id);
-				perror(NULL);
-				exit(1);
-			}
+		/* Tell servers what to expect */
+		master_to_srv(RCV_MSG_LEN, msglen, msgcnt, 0);
+
+		/* Wait until all servers are ready: */
+		for (i = 1; i <= num_clients; i++) {
+			master_from_srv(&cmd, 0, 0);
 		}
 
-		for (client_id = 1; client_id <= num_clients; client_id++) {
-			struct client_cmd report;
-			int sz;
+		/* Tell clients to run a throughput test: */
+		master_to_client(CLNT_EXEC, msglen, msgcnt, 0);
 
-			wait_err = wait_for_msg(client_master_sd);
-			if (wait_err) {
-				printf("Client master: result %u not received "
-				       "(err=%u)\n", client_id, wait_err);
-				exit(1);
-			}
-			sz = recv(client_master_sd, &report, sizeof(report), 0);
-			if (sz != sizeof(report)) {
-				printf("Client master: result %u invalid\n",
-				       client_id);
-				perror(NULL);
-				exit(1);
-			}
-			dprintf("Client master: received TASK_FINISHED "
-			        "from client %u\n", report.client_no);
+		/* Wait until all clients and servers are finished */
+		for (i = 1; i <= num_clients; i++) {
+			master_from_client(&cmd);
+			master_from_srv(&cmd, 0, 0);
 		}
 
-		elapsed = elapsedmillis(&start_time);
-		msg_per_sec = (cmd.msg_count * num_clients * 1000)/elapsed;
-		procs = 1 + (server_node != own_node(client_master_sd));
-		printf("... took %llu ms "
-		       "(avg %llu msg/s/dir, %llu bits/s/dir)\n",
-		       elapsed, msg_per_sec/2, msg_per_sec*cmd.msg_size*8/2);
-		printf("    avg execution time (send+receive) %llu us/msg\n",
-		       (1000000 / (msg_per_sec * 2)) * procs);
-
-		cmd.msg_size *= 4;
-		cmd.msg_count /= 4;
-		cmd.burst_size /= 4;
+		/* Calculate and present result: */
+		elapsed = elapsednanos(&start_time);
+		msg_per_sec = (msgcnt * num_clients * 1000000000) / elapsed;
+		thruput = msg_per_sec * msglen * 8/1000000;
+		printf("| %8llu  | %12llu  | %11llu  | %14llu  |\n", 
+		       elapsed/1000000, msg_per_sec, thruput, thruput/num_clients);
+		printf("+-------------------------------------------------"
+		       "--------------------------------------------+\n");
 	}
-
-	printf("Client master: Completed Throughput Benchmark\n");
+	printf("Completed Throughput Benchmark\n");
 
 end_thruput:
 
 	/* Terminate all client processes */
+	master_to_client(CLNT_TERM, 0, 0, 0);
 
-	cmd.cmd = TERMINATE;
-	for (client_id = 1; client_id <= num_clients; client_id++) {
-		dest_addr.addr.name.name.instance = client_id;
-		if (sendto(client_master_sd, &cmd, sizeof(cmd), 0,
-		                (struct sockaddr *)&dest_addr,
-		                sizeof(dest_addr)) <= 0) {
-			printf("Client master: failed to send TERMINATE message"
-			       " to client %u\n",
-			       client_id);
-			perror(NULL);
-			exit(1);
-		}
-	}
-	if (signal(SIGALRM, sig_alarm) == SIG_ERR) {
-		printf("Client master: Can't catch alarm signals\n");
-		perror(NULL);
-		exit(1);
-	}
+	if (signal(SIGALRM, sig_alarm) == SIG_ERR)
+		die("Master: Can't catch alarm signals\n");
+
 	alarm(MAX_DELAY);
-	for (client_id = 1; client_id <= num_clients; client_id++) {
-		if (wait(NULL) <= 0) {
-			printf("Client master: error during termination\n");
-			perror(NULL);
-			exit(1);
-		}
+	for (clnt_id = 1; clnt_id <= num_clients; clnt_id++) {
+		if (wait(NULL) <= 0)
+			die("Master: error during termination\n");
 	}
 
-	printf("****** TIPC benchmark client finished ******\n");
-	shutdown(client_master_sd, SHUT_RDWR);
-	close(client_master_sd);
+	printf("****** TIPC Benchmark Client Finished ******\n");
+	shutdown(master_clnt_sd, SHUT_RDWR);
+	close(master_clnt_sd);
+	shutdown(master_srv_sd, SHUT_RDWR);
+	close(master_srv_sd);
 	exit(0);
 }
 
+static int select_ip(struct srv_info *sinfo)
+{
+	struct srv_info cinfo;
+	int clnt_ip_num, srv_ip_num;
+	int s_ipno = 0;
+	int c_ipno = 0;
+	int s_ip, c_ip, best_ip = 0;
+	int best_prefix = 32;
+	int mask, shift;
+
+	get_ip_list(&cinfo);
+	clnt_ip_num = ntohs(cinfo.num_ips);
+	srv_ip_num = ntohs(sinfo->num_ips);
+	for (; s_ipno < srv_ip_num; s_ipno++) {
+		s_ip = ntohl(sinfo->ips[s_ipno]);
+		for (c_ipno = 0; c_ipno < clnt_ip_num; c_ipno++) {
+			c_ip = ntohl(cinfo.ips[c_ipno]);
+			mask = ~0;
+			shift = 0;
+
+			if (c_ip == s_ip)
+				return 0x7f000001;
+
+			while ((c_ip & mask) != (s_ip & mask))
+				mask <<= ++shift;
+
+			if (shift < best_prefix) {
+				best_prefix = shift;
+				best_ip = s_ip;
+			}
+		}
+	}
+	return best_ip;
+}

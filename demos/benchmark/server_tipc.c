@@ -6,7 +6,7 @@
  *
  * ------------------------------------------------------------------------
  *
- * Copyright (c) 2001-2005, Ericsson Research Canada
+ * Copyright (c) 2001-2005, 2014, Ericsson AB
  * Copyright (c) 2004-2006, Wind River Systems
  * All rights reserved.
  * Redistribution and use in source and binary forms, with or without
@@ -36,241 +36,223 @@
  * ------------------------------------------------------------------------
  */
 
-#include <getopt.h>
-#include <netinet/in.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/poll.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <linux/tipc.h>
+#include "common_tipc.h"
 
-#define SERVER_NAME  17777
+#define SRV_TIMEOUT 30
 
-#define DEBUG 0
+static unsigned char *buf = NULL;
+static int wait_for_connection(int listener_sd);
+static void echo_messages(int peer_sd, int master_sd, int srv_id);
+static __u32 own_node_addr;
 
-#define dprintf(fmt, arg...)  do {if (DEBUG) printf(fmt, ## arg);} while(0)
-
-static char buf[TIPC_MAX_USER_MSG_SIZE];
-
-static int server_timeout = 30;		/* inactivity limit [in sec] */
-
-static void sig_alarm(int signo)
+static void srv_to_master(uint cmd, struct srv_info *sinfo)
 {
-	printf("TIPC benchmark server timeout, exiting...\n");
-	printf("****** TIPC benchmark server finished ******\n");
-	exit(0);
+	struct srv_to_master_cmd c;
+
+	memset(&c, 0, sizeof(c));
+	c.cmd = htonl(cmd);
+	c.tipc_addr = htonl(own_node_addr);
+	if (sinfo)
+		memcpy(&c.sinfo, sinfo, sizeof(*sinfo));
+	if (sizeof(c) != sendto(master_sd, &c, sizeof(c), 0,	
+				(struct sockaddr *)&master_srv_addr,
+				sizeof(master_srv_addr)))
+		die("Server: unable to send info to master\n");
 }
 
-static void usage(char *app)
+static void srv_from_master(uint *cmd, uint* msglen, uint *msgcnt, uint *echo)
 {
-	fprintf(stderr, "Usage:\n");
-	fprintf(stderr, "  %s [-i <idle timeout>]\n", app);
-	fprintf(stderr, "\tidle timeout defaults to %d (seconds)\n",
-	        server_timeout);
+	struct master_srv_cmd c;
+
+	if (wait_for_msg(master_sd))
+		die("No command from master\n");
+
+	if (sizeof(c) != recv(master_sd, &c, sizeof(c), 0))
+		die("Server: Invalid info msg from master\n");
+
+	*cmd = ntohl(c.cmd);
+	*msglen = ntohl(c.msglen);
+	if (msgcnt)
+		*msgcnt = ntohl(c.msgcnt);
+	if (echo)
+		*echo = ntohl(c.echo);
 }
 
 int main(int argc, char *argv[], char *dummy[])
 {
-	int c;
-	int listener_sd;
-	struct sockaddr_tipc server_addr;
+	ushort tcp_port = 4711;
+	struct srv_info sinfo;
+	uint cmd;
+	uint max_msglen;
+	struct sockaddr_in srv_addr;
+	int lstn_sd, peer_sd;
+	int srv_id = 0, srv_cnt = 0;;
 
-	unsigned int acceptno = 0;
-	int child_count = 0;
-	int peer_sd;
-	pid_t child_pid;
-	fd_set fds;
-	struct timeval tv;
-	__u32 server_num;
-	int r;
+	own_node_addr = own_node();
 
-	int imp = TIPC_MEDIUM_IMPORTANCE;
-	struct pollfd pfd;
-	int pollres;
-	int msglen = 0;
-	unsigned int msg_count = 0;
+	memset(&sinfo, 0, sizeof(sinfo));
+		
+	if (signal(SIGALRM, sig_alarm) == SIG_ERR)
+		die("Server master: can't catch alarm signals\n");
 
-	/* Process command line arguments */
+	printf("******   TIPC Benchmark Server Started   ******\n");
 
-	while ((c = getopt(argc, argv, "i:h")) != -1) {
-		switch (c) {
-		case 'i':
-			server_timeout = atoi(optarg);
-			if (server_timeout <= 0) {
-				fprintf(stderr,
-				        "Invalid idle timeout [%d]\n",
-				        server_timeout);
-				exit(1);
-			}
-			break;
-		default:
-			usage(argv[0]);
-			return 1;
-		}
+	/* Create socket for communication with master: */
+reset:
+	master_sd = socket(AF_TIPC, SOCK_RDM, 0);
+	if (master_sd < 0)
+		die("Server: Can't create socket to master\n");
+
+	if (bind(master_sd, (struct sockaddr *)&srv_ctrl_addr,
+		 sizeof(srv_ctrl_addr)))
+		die("Server: Failed to bind to master socket\n");
+
+	/* Wait for command from master: */
+	srv_from_master(&cmd, &max_msglen, 0, 0);
+	buf = malloc(max_msglen);
+	if (!buf)
+		die("Failed to create buffer of size %u\n", ntohl(max_msglen));
+
+	/* Create TIPC or TCP listening socket: */
+
+	if (cmd == TIPC_CONN) {
+		lstn_sd = socket (AF_TIPC, SOCK_STREAM,0);
+		if (lstn_sd < 0)
+			die("Server master: can't create listening socket\n");
+		
+		if (bind(lstn_sd, (struct sockaddr *)&srv_lstn_addr,
+			 sizeof(srv_lstn_addr)) < 0)
+			die("TIPC Server master: failed to bind port name\n");
+
+		printf("******   TIPC Listener Socket Created    ******\n");
+		srv_to_master(SRV_INFO, 0);
+		close(master_sd);
+
+	} else if (cmd == TCP_CONN) {
+		if ((lstn_sd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+			die("TCP Server: failed to create listener socket");
+
+		/* Construct listener address structure */
+		memset(&srv_addr, 0, sizeof(srv_addr));
+		srv_addr.sin_family = AF_INET;
+		srv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+		srv_addr.sin_port = htons(tcp_port);
+	
+		/* Bind socket to address */
+		while (0 > bind(lstn_sd, (struct sockaddr *) &srv_addr,
+				sizeof(srv_addr)))
+			srv_addr.sin_port = htons(++tcp_port);
+
+		/* Inform master about own IP addresses and listener port number */
+		get_ip_list(&sinfo);
+		sinfo.tcp_port = htons(tcp_port);
+		printf("******    TCP Listener Socket Created    ******\n");
+		srv_to_master(SRV_INFO, &sinfo);
+		close(master_sd);
+	} else {
+		close(master_sd);
+		goto reset;
 	}
 
-	if (signal(SIGALRM, sig_alarm) == SIG_ERR) {
-		printf("Server master: can't catch alarm signals\n");
-		perror(NULL);
-		exit(1);
-	}
-
-	/* Create listening socket for answering calls from clients */
-
-	listener_sd = socket (AF_TIPC, SOCK_SEQPACKET,0);
-	if (listener_sd < 0) {
-		printf("Server master: can't create listening socket\n");
-		perror(NULL);
-		exit(1);
-	}
-
-	server_addr.family = AF_TIPC;
-	server_addr.addrtype = TIPC_ADDR_NAMESEQ;
-	server_addr.scope = TIPC_ZONE_SCOPE;
-	server_addr.addr.nameseq.type = SERVER_NAME;
-	server_addr.addr.nameseq.lower = 0;
-	server_addr.addr.nameseq.upper = 0;
-	if (bind(listener_sd, (struct sockaddr *)&server_addr,
-	                sizeof(server_addr)) < 0) {
-		printf("Server master: failed to bind port name\n");
-		perror(NULL);
-		exit(1);
-	}
-	if (listen(listener_sd, 5) < 0) {
-		printf("Server master: failed to listen for connections\n");
-		perror(NULL);
-		exit(1);
-	}
-
-	printf("****** TIPC benchmark server started ******\n");
-
-	/* Accept connections until idle too long with no active children */
-
-	alarm(server_timeout);
+	/* Listen for incoming connections */
+	if (listen(lstn_sd, 32) < 0)
+		die("Server: listen() failed");
 
 	while (1) {
+		if (waitpid(-1, NULL, WNOHANG) > 0) {
+			if (--srv_cnt)
+				continue;
+			close(lstn_sd);
+			printf("******      Listener Socket Deleted      ******\n");
+			goto reset;
+		}
 
-		/* Try to accept another client connection */
-
-		FD_ZERO(&fds);
-		FD_SET(listener_sd, &fds);
-		tv.tv_sec = 5;
-		tv.tv_usec = 0;
-
-		r = select(listener_sd + 1, &fds, 0, 0, &tv);
-		if (r > 0 && FD_ISSET(listener_sd, &fds)) {
-			peer_sd = accept(listener_sd, 0, 0);
-			if (peer_sd < 0 ) {
-				printf ("Server master: accept failed\n");
-				perror(NULL);
-				exit(1);
-			}
-
-			alarm(0);
-			acceptno++;
-			child_count++;
-
-			fflush(stdout);
-			child_pid = fork();
-			if (child_pid < 0) {
-				printf ("Server master: fork failed\n");
-				perror(NULL);
-				exit(1);
-			}
-			if (!child_pid)
-				break;	/* Child process exits loop */
-
+		peer_sd = wait_for_connection(lstn_sd);
+		if (!peer_sd)
+			continue;
+		srv_id++;
+		srv_cnt++;
+		if (fork()) {
 			close(peer_sd);
+			continue;
 		}
 
-		/* Terminate zombie children; start timer if no children left */
-
-		while (waitpid(0, NULL, WNOHANG) > 0) {
-			if (--child_count == 0)
-				alarm(server_timeout);
-		}
+		/* Continue in child process */
+		close(lstn_sd);
+		dprintf("calling echo: peer_sd: %u, srv_cnt = %u\n",peer_sd, srv_cnt);
+		master_sd = socket(AF_TIPC, SOCK_RDM, 0);
+		if (master_sd < 0)
+			die("Server: Can't create socket to master\n");
+		
+		if (bind(master_sd, (struct sockaddr *)&srv_ctrl_addr,
+			 sizeof(srv_ctrl_addr)))
+			die("Server: Failed to bind to master socket\n");
+		
+		echo_messages(peer_sd, master_sd, srv_id);
 	}
-
-	/* Child server gets ready to handle client requests */
-
-	dprintf("Server process %u created\n", acceptno);
-	close(listener_sd);
-
-	setsockopt(peer_sd, SOL_TIPC, TIPC_IMPORTANCE, &imp, sizeof(imp));
-
-	pfd.fd = peer_sd;
-	pfd.events = 0xffff & ~POLLOUT;
-	pollres = poll(&pfd, 1, server_timeout * 1000);
-	if (pollres <= 0) {
-		printf("Server %u: no setup msg after %u sec\n",
-		       acceptno, server_timeout);
-		exit(1);
-	}
-	if (recv(peer_sd, buf, TIPC_MAX_USER_MSG_SIZE, 0) <= 0) {
-		printf("Server %u: unable to receive setup msg\n", acceptno);
-		perror(NULL);
-		exit(1);
-	}
-	server_num = htonl(acceptno);
-	if (send(peer_sd, &server_num, 4, 0) <= 0) {
-		printf("Server %u: unable to respond to setup msg\n", acceptno);
-		perror(NULL);
-		exit(1);
-	}
-
-	/* Child server echoes client messages until connection is closed */
-
-	while (1) {
-		pollres = poll(&pfd, 1, server_timeout * 1000);
-		if (pollres < 0) {
-			printf("Server %u: poll() error "
-			       "(pollres=%x, revents=%x, msglen=%u)\n",
-			       acceptno, pollres, pfd.revents, msglen);
-			exit(1);
-		} else if (pollres == 0) {
-			printf("Server %u: no client msg after %u sec "
-			       "(pollres=%x, revents=%x, msglen=%u)\n",
-			       acceptno, server_timeout,
-			       pollres, pfd.revents, msglen);
-			exit(1);
-		}
-		if (!(pfd.revents & POLLIN)) {
-			printf("Server %u: unexpected event (revents=%x)\n",
-			       acceptno, pfd.revents);
-			exit(1);
-		}
-
-		msglen = recv(peer_sd, buf, TIPC_MAX_USER_MSG_SIZE, 0);
-		if (msglen < 0) {
-			printf("Server %u: recv failed (pollres=%x)\n",
-			       acceptno, pollres);
-			perror(NULL);
-			exit(1);
-		} else if (msglen == 0) {
-			dprintf("Server %u: normal conn shutdown\n", acceptno);
-			break;
-		}
-
-		if (!(++msg_count % 50000)) {
-			dprintf("Server %u received %u messages\n",
-			        acceptno, msg_count);
-		}
-
-		if (send(peer_sd, buf, msglen, 0) != msglen) {
-			printf("Server %u: send %u failed (msg len = %u)\n",
-			       acceptno, msg_count, msglen);
-			perror(NULL);
-			exit(1);
-		}
-
-	}
-
-	shutdown(peer_sd, SHUT_RDWR);
-	close(peer_sd);
+	close(lstn_sd);
+	printf("******   TIPC Benchmark Server Finished   ******\n");
 	exit(0);
+	return 0;
 }
 
+static int wait_for_connection(int lstn_sd)
+{
+	int peer_sd;
+	fd_set fds;
+	struct timeval tv;
+	int res;
+	
+	/* Accept another client connection */
+	
+	FD_ZERO(&fds);
+	FD_SET(lstn_sd, &fds);
+	tv.tv_sec =  0;
+	tv.tv_usec = 500000;
+	res = select(lstn_sd + 1, &fds, 0, 0, &tv);
+	if (res > 0 && FD_ISSET(lstn_sd, &fds)) {
+		peer_sd = accept(lstn_sd, 0, 0);
+		if (peer_sd <= 0 )
+			die("Server master: accept failed\n");
+		return peer_sd;
+	}
+	return 0;
+}
+
+static void echo_messages(int peer_sd, int master_sd, int srv_id)
+{
+	uint cmd, msglen, msgcnt, echo, rcvd = 0;
+
+	do {
+		/* Get msg length and number to expect, and ack: */
+		srv_from_master(&cmd, &msglen, &msgcnt, &echo);
+
+		if (cmd != RCV_MSG_LEN)
+			break;
+
+		srv_to_master(SRV_MSGLEN_ACK, 0);
+
+		dprintf("srv %u: expecting %u msgs of size %u, echoing = %u\n", 
+			srv_id, msgcnt,msglen,echo);
+		while (rcvd < msgcnt) {
+			if (wait_for_msg(peer_sd))
+				die("poll() from client failed\n");
+			if (msglen != recv(peer_sd, buf, msglen, MSG_WAITALL))
+				die("Server %u: echo_messages recv() error\n", srv_id);
+			rcvd++;
+			if (!echo)
+				continue;
+			if (msglen != send(peer_sd, buf, msglen, 0))
+				die("echo_msg: send failed\n");
+		};
+		dprintf("srv %u: reporting FINISHED to master\n", srv_id);
+		srv_to_master(SRV_FINISHED, 0);
+		rcvd = 0;
+	} while (1);
+
+	dprintf("Server shutdown\n");
+	shutdown(peer_sd, SHUT_RDWR);
+	close(peer_sd);
+	close(master_sd);
+	exit(0);
+}
