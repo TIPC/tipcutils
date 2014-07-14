@@ -1,5 +1,5 @@
 AC_PREREQ([2.4])
-AC_INIT([tipcutils], [2.0.5], [erik.hugne@ericsson.com])
+AC_INIT([tipcutils], [2.0.6], [erik.hugne@ericsson.com])
 
 AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_HEADERS([config.h])
